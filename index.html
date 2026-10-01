@@ -588,7 +588,10 @@ const S={art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',d
   token:qs.get('p')||lsGet('wt2.token',null),dmMode:qs.has('dm'),pass:lsGet('wt2.pass',null),
   me:null,players:[],tab:null,open:null,draft:null,step:0,swap:null,armed:null,err:null,loaded:false,editing:false};
 if(qs.get('p'))lsSet('wt2.token',qs.get('p'));
-function blankDraft(){return{name:'',ancestry:null,cls:null,background:null,base:{str:10,dex:10,con:10,int:10,wis:10,cha:10},skills:[],cantrips:[],spells:[],look:'',personality:'',drive:'',tie:'',never:'',secret:'',likes:[]}}
+const AVAIL={every:['Every session','The chair is mine. I will be there with dice and opinions.'],most:['Most sessions','I will miss the odd one, life permitting.'],some:['Now and then','Drop in, drop out. A wandering adventurer.'],rare:['Guest star','A rare, dramatic appearance. Worth the wait.']};
+const AWAY={errand:'Off on a mysterious errand',dm:'The DM may play them quietly',tavern:'Asleep in the tavern, as usual',vanish:'Simply not there. Nobody asks.'};
+function availLine(c){if(!c||!AVAIL[c.avail])return'';return AVAIL[c.avail][0]+(c.away&&AWAY[c.away]&&c.avail!=='every'?'. When away: '+AWAY[c.away].toLowerCase():'')}
+function blankDraft(){return{name:'',ancestry:null,cls:null,background:null,base:{str:10,dex:10,con:10,int:10,wis:10,cha:10},skills:[],cantrips:[],spells:[],look:'',personality:'',drive:'',tie:'',never:'',secret:'',likes:[],avail:'',away:''}}
 function draftKey(){return'wt2.draft.'+(S.token||'x')}
 S.draft=lsGet(draftKey(),null)||blankDraft();
 function saveDraft(){lsSet(draftKey(),S.draft)}
@@ -628,7 +631,7 @@ function sheetHTML(c,opts){
      <div style="display:grid;gap:14px;align-content:start">
        <div class="panel"><h3>Skills</h3><div class="skills">${sk}</div></div>
        <div class="panel"><div class="row" style="justify-content:space-between"><h3>Starting gear</h3><span class="sub">${B.gold||0} gold</span></div><div class="inv" style="margin-top:6px">${inv}</div></div>
-       ${story||opts.secret?`<div class="panel"><h3>Story</h3><dl class="k2">${story}</dl>${opts.secret?`<p class="secret"><span class="eyebrow">Secret, only the DM sees this</span><br>${esc(opts.secret)}</p>`:''}${c.likes&&c.likes.length?`<p class="sub">Enjoys: ${esc(c.likes.join(', '))}</p>`:''}</div>`:''}
+       ${story||opts.secret||c.avail?`<div class="panel"><h3>Story</h3><dl class="k2">${story}</dl>${opts.secret?`<p class="secret"><span class="eyebrow">Secret, only the DM sees this</span><br>${esc(opts.secret)}</p>`:''}${c.likes&&c.likes.length?`<p class="sub">Enjoys: ${esc(c.likes.join(', '))}</p>`:''}${availLine(c)?`<p class="sub">Turns up: ${esc(availLine(c))}</p>`:''}</div>`:''}
      </div>
    </div></div>`;
 }
@@ -639,7 +642,7 @@ function steps(){const k=CLS[S.draft.cls];return STEPS.filter(s=>s[0]!=='spells'
 function stepOk(key){const D=S.draft;const K=CLS[D.cls];
   if(key==='who')return!!D.name.trim();if(key==='anc')return!!D.ancestry;if(key==='cls')return!!D.cls;
   if(key==='skills')return!!D.background&&D.skills.length===K.pick;
-  if(key==='spells')return D.cantrips.length===K.cast.cantrips&&D.spells.length===K.cast.spells;return true}
+  if(key==='spells')return D.cantrips.length===K.cast.cantrips&&D.spells.length===K.cast.spells;if(key==='story')return!!D.avail;return true}
 const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const SIG={fighter:'sword',rogue:'dagger',wizard:'star',barbarian:'axe',bard:'lute',cleric:'sun',paladin:'shield',ranger:'bow'};
 function tarot(field,entries,sel,meta){
@@ -648,7 +651,7 @@ function tarot(field,entries,sel,meta){
   return `<div class="deck">${entries.map(([k,o],i)=>`<button class="tcard" data-act="pick" data-f="${field}" data-v="${k}" aria-pressed="${sel===k}"><span class="tn">${ROMAN[i]}</span>${field==='cls'?`<svg class="sig"><use href="#s-${SIG[k]}"/></svg>`:`<span class="glyph">${esc(o.name[0])}</span>`}<b>${esc(o.name)}</b></button>`).join('')}</div>`+desc;
 }
 function abHelp(a){return{str:'lifting, hitting, opening stubborn jars',dex:'reflexes, aim, sneaking out before breakfast',con:'toughness, hit points, hangover recovery',int:'memory, reasoning, wizard magic',wis:'gut feeling, cleric magic, knowing when to leave',cha:'charm, presence, free drinks, bard magic'}[a]}
-function draftToChar(){const D=S.draft;return{name:D.name.trim(),ancestry:D.ancestry,cls:D.cls,background:D.background,base:{...D.base},skills:[...D.skills],cantrips:[...D.cantrips],spells:[...D.spells],look:D.look,personality:D.personality,drive:D.drive,tie:D.tie,never:D.never,likes:[...D.likes],level:1}}
+function draftToChar(){const D=S.draft;return{name:D.name.trim(),ancestry:D.ancestry,cls:D.cls,background:D.background,base:{...D.base},skills:[...D.skills],cantrips:[...D.cantrips],spells:[...D.spells],look:D.look,personality:D.personality,drive:D.drive,tie:D.tie,never:D.never,likes:[...D.likes],avail:D.avail,away:D.away,level:1}}
 function charToDraft(c,secret){return{...blankDraft(),...clone(c),secret:secret||''}}
 function viewBuild(){
   const st=steps();if(S.step>=st.length)S.step=st.length-1;const [key]=st[S.step];const D=S.draft;
@@ -675,7 +678,9 @@ function viewBuild(){
   if(key==='story')body=`<h2 style="font-size:1.8rem">Their story</h2><p class="muted" style="margin:0">A sentence each is plenty. The DM will use every word of it against you.</p>
     ${[['look','What do people notice first?','A scar they say came from a dragon (it was a goat)'],['personality','How do they act around others?','Flirts when nervous, which is always'],['drive','What do they want more than anything?','To win back the tavern they lost in a card game'],['tie','How do they know someone else in the party?','Woke up next to another party member once. Nobody talks about it.'],['never','One thing they would never do','Pay full price']].map(([k,l,p])=>`<label class="f">${l}<input type="text" id="b-${k}" data-draft="${k}" value="${esc(D[k])}" placeholder="${esc(p)}"></label>`).join('')}
     <label class="f">A secret only the DM sees <span class="h">Optional. The rest of the party never sees this.</span><textarea id="b-secret" data-draft="secret" placeholder="Still married. Technically.">${esc(D.secret)}</textarea></label>
-    <div class="f">What do you, the player, enjoy most at the table? <span class="h">Pick any.</span><div class="row">${LIKES.map(l=>`<button class="chip ${D.likes.includes(l)?'on':''}" data-act="like" data-v="${esc(l)}">${esc(l)}</button>`).join('')}</div></div>`;
+    <div class="f">What do you, the player, enjoy most at the table? <span class="h">Pick any.</span><div class="row">${LIKES.map(l=>`<button class="chip ${D.likes.includes(l)?'on':''}" data-act="like" data-v="${esc(l)}">${esc(l)}</button>`).join('')}</div></div>
+    <div class="f">How often can you join? <span class="h">Be honest, no judgement. The story is built around it, so dropping in and out is fine.</span><div class="choices">${Object.entries(AVAIL).map(([k,[t,h]])=>`<button class="choice" data-act="avail" data-v="${k}" aria-pressed="${D.avail===k}"><h3 style="font-size:1.1rem">${esc(t)}</h3><p>${esc(h)}</p></button>`).join('')}</div></div>
+    ${D.avail&&D.avail!=='every'?`<div class="f">When you can't make it, your character is… <span class="h">Optional.</span><div class="row">${Object.entries(AWAY).map(([k,t])=>`<button class="chip ${D.away===k?'on':''}" data-act="away" data-v="${k}">${esc(t)}</button>`).join('')}</div></div>`:''}`;
   if(key==='done')body=`<h2 style="font-size:1.8rem">The guild will see you now, ${esc(D.name)}.</h2>
      <div class="row"><button class="btn pri" data-act="submit" id="submitbtn">${S.me&&S.me.data?'Save my changes':'Sign the guild ledger'}</button><button class="btn sm" data-act="restart">${S.armed==='restart'?'Tap again to start over':'Start over'}</button></div>
      ${sheetHTML(draftToChar(),{secret:D.secret})}`;
@@ -759,10 +764,11 @@ function viewDM(){
   const ps=S.players;
   const done=ps.filter(p=>p.data).length;
   const rows=ps.map(p=>{const c=p.data;const x=c?derive(c):null;const url=location.origin+location.pathname+'?p='+p.token;
-    return`<div class="prow"><div class="who"><h3>${esc(p.label)}</h3><div class="sub">${c?esc(c.name)+' · '+esc(x.A.name)+' '+esc(x.K.name)+' · '+x.hpMax+' HP, AC '+x.ac:'Not sent yet'}</div><div class="link">${esc(url)}</div>${c?`<div class="artrow" style="margin-top:6px">${S.art['pc-'+p.id]?artImg('pc-'+p.id,'thumb'):''}<label class="btn sm">${S.art['pc-'+p.id]?'Replace portrait':'Add portrait'}<input type="file" accept="image/*" data-art="pc-${esc(p.id)}" data-shown="0"></label>${S.art['pc-'+p.id]?`<button class="btn sm ${(S.artIdx['pc-'+p.id]||{}).shown?'':'pri'}" data-act="reveal" data-id="pc-${esc(p.id)}">${(S.artIdx['pc-'+p.id]||{}).shown?'Hide portrait':'Reveal portrait'}</button>`:''}<button class="btn sm" data-act="prompt" data-pid="${esc(p.id)}">Copy image prompt</button></div>`:''}</div>
+    return`<div class="prow"><div class="who"><h3>${esc(p.label)}</h3><div class="sub">${c?esc(c.name)+' · '+esc(x.A.name)+' '+esc(x.K.name)+' · '+x.hpMax+' HP, AC '+x.ac+(c.avail&&AVAIL[c.avail]?' · '+esc(AVAIL[c.avail][0]):''):'Not sent yet'}</div><div class="link">${esc(url)}</div>${c?`<div class="artrow" style="margin-top:6px">${S.art['pc-'+p.id]?artImg('pc-'+p.id,'thumb'):''}<label class="btn sm">${S.art['pc-'+p.id]?'Replace portrait':'Add portrait'}<input type="file" accept="image/*" data-art="pc-${esc(p.id)}" data-shown="0"></label>${S.art['pc-'+p.id]?`<button class="btn sm ${(S.artIdx['pc-'+p.id]||{}).shown?'':'pri'}" data-act="reveal" data-id="pc-${esc(p.id)}">${(S.artIdx['pc-'+p.id]||{}).shown?'Hide portrait':'Reveal portrait'}</button>`:''}<button class="btn sm" data-act="prompt" data-pid="${esc(p.id)}">Copy image prompt</button></div>`:''}</div>
       <div class="row" style="justify-content:flex-end">${c?`<button class="btn sm" data-act="open" data-id="${esc(p.id)}">Open</button>`:''}<button class="btn sm" data-act="copy" data-url="${esc(url)}">Copy link</button><button class="btn sm warn" data-act="remove" data-id="${esc(p.id)}">${S.armed==='rm'+p.id?'Tap again':'Remove'}</button></div></div>`}).join('');
-  const notes=ps.filter(p=>p.data&&(p.secret||(p.data.likes&&p.data.likes.length)||p.data.drive||p.data.tie)).map(p=>`<div><b>${esc(p.data.name)}</b> <span class="sub">(${esc(p.label)})</span>${p.data.drive?`<p style="margin:2px 0">Wants: ${esc(p.data.drive)}</p>`:''}${p.data.tie?`<p style="margin:2px 0">Tie: ${esc(p.data.tie)}</p>`:''}${p.data.likes&&p.data.likes.length?`<p class="sub" style="margin:2px 0">Enjoys: ${esc(p.data.likes.join(', '))}</p>`:''}${p.secret?`<p class="secret" style="margin:4px 0">${esc(p.secret)}</p>`:''}</div>`).join('');
+  const notes=ps.filter(p=>p.data&&(p.data.avail||p.secret||(p.data.likes&&p.data.likes.length)||p.data.drive||p.data.tie)).map(p=>`<div><b>${esc(p.data.name)}</b> <span class="sub">(${esc(p.label)})</span>${p.data.drive?`<p style="margin:2px 0">Wants: ${esc(p.data.drive)}</p>`:''}${p.data.tie?`<p style="margin:2px 0">Tie: ${esc(p.data.tie)}</p>`:''}${p.data.likes&&p.data.likes.length?`<p class="sub" style="margin:2px 0">Enjoys: ${esc(p.data.likes.join(', '))}</p>`:''}${availLine(p.data)?`<p class="sub" style="margin:2px 0">Turns up: ${esc(availLine(p.data))}</p>`:''}${p.secret?`<p class="secret" style="margin:4px 0">${esc(p.secret)}</p>`:''}</div>`).join('');
   return`<div class="row" style="justify-content:space-between"><h2 style="font-size:1.6rem">Your players</h2><span class="chip">${done} of ${ps.length} characters in</span></div>
+   ${done?`<p class="sub" style="margin:0">Turning up: ${Object.entries(AVAIL).map(([k,[t]])=>[t,ps.filter(p=>p.data&&p.data.avail===k).length]).filter(a=>a[1]).map(([t,n])=>n+' '+t.toLowerCase()).join(', ')||'not said yet'}.</p>`:''}
    ${ps.length?`<div style="display:grid;gap:8px">${rows}</div>`:`<div class="empty"><h2>No players yet</h2><p>Add each player below. Each gets a personal link to send on WhatsApp; no account or login needed.</p></div>`}
    <div class="panel" style="display:grid;gap:8px"><span class="eyebrow">Add a player</span><div class="row"><input type="text" id="newplayer" placeholder="Their first name" style="flex:1;min-width:160px"><button class="btn" data-act="add">Create link</button></div></div>
    <div class="panel" style="display:grid;gap:8px"><h3>For the story</h3>${notes||'<p class="muted" style="margin:0">What players want, how they know each other, what they enjoy and their secrets appear here as characters come in.</p>'}</div>
@@ -840,6 +846,8 @@ document.addEventListener('click',async e=>{
   case'swap':{const x=b.dataset.a;if(!S.swap)S.swap=x;else{if(S.swap!==x){const t=S.draft.base[S.swap];S.draft.base[S.swap]=S.draft.base[x];S.draft.base[x]=t;saveDraft()}S.swap=null}rr();break}
   case'recommend':S.draft.base={...CLS[S.draft.cls].arr};saveDraft();rr();break;
   case'skill':case'spell':{const f=a==='skill'?'skills':b.dataset.f,v=b.dataset.v,L=S.draft[f];S.draft[f]=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();rr();break}
+  case'avail':{S.draft.avail=b.dataset.v;saveDraft();rr();break}
+  case'away':{S.draft.away=S.draft.away===b.dataset.v?'':b.dataset.v;saveDraft();rr();break}
   case'like':{const v=b.dataset.v,L=S.draft.likes;S.draft.likes=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();b.classList.toggle('on');break}
   case'next':if(stepOk(steps()[S.step][0])){S.step++;window.scrollTo(0,0);rr()}break;
   case'back':if(S.step>0){S.step--;window.scrollTo(0,0);rr()}break;
