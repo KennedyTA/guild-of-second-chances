@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>The Guild of Second Chances</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one column for a player's phone, a card grid for the DM's laptop. Ink, verdigris and brass, like an old campaign map. */
+:root{
+  --bg:#E8ECE5; --surface:#F7F8F3; --sunk:#DCE2D9; --fg:#1C2230; --muted:#586170; --line:#C3CBC0;
+  --accent:#2B7262; --accent-ink:#F7F8F3; --brass:#946A1C; --blood:#AE3338; --ok:#3A7C43; --warn:#9C6D12;
+  --display:"IM Fell English SC","Iowan Old Style",Georgia,serif;
+  --body:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141B; --surface:#192029; --sunk:#222A35; --fg:#E6E3D8; --muted:#9AA2AE; --line:#2E3744;
+  --accent:#5DB59F; --accent-ink:#0D1916; --brass:#D2A54A; --blood:#E2686D; --ok:#7CC387; --warn:#DFB459; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141B; --surface:#192029; --sunk:#222A35; --fg:#E6E3D8; --muted:#9AA2AE; --line:#2E3744;
+  --accent:#5DB59F; --accent-ink:#0D1916; --brass:#D2A54A; --blood:#E2686D; --ok:#7CC387; --warn:#DFB459; color-scheme:dark}
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.45 var(--body);-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:.01em}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:0 120px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{max-width:1180px;margin:0 auto;padding:10px 16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:1.45rem;line-height:1.1}
+.brand small{display:block;font-family:var(--body);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.role{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.82rem;background:var(--surface)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.bad{border-color:var(--blood);color:var(--blood)}
+.tabs{max-width:1180px;margin:0 auto;display:flex;gap:2px;overflow-x:auto;padding:8px 16px 0;scrollbar-width:none}
+.tabs button{border:0;background:none;padding:8px 12px 10px;border-bottom:3px solid transparent;font-weight:700;color:var(--muted);white-space:nowrap;cursor:pointer}
+.tabs button[aria-current="true"]{color:var(--fg);border-color:var(--brass)}
+.banner{margin:14px 0 0;padding:10px 14px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);font-size:.92rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:700;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.warn{color:var(--blood);border-color:var(--blood)}
+.btn.sm{min-height:32px;padding:0 10px;font-size:.88rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+input[type=text],input[type=number],textarea,select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px}
+textarea{min-height:76px;resize:vertical}
+label.f{display:grid;gap:4px;font-weight:700;font-size:.92rem}
+label.f span.h{font-weight:400;color:var(--muted);font-size:.85rem}
+.eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+section.view{display:grid;gap:18px;padding-top:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.muted{color:var(--muted)}
+.empty{padding:28px 18px;text-align:center;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted)}
+.empty h2{color:var(--fg);font-size:1.4rem;margin-bottom:6px}
+
+/* hp */
+.hpbar{height:10px;border-radius:6px;background:var(--sunk);overflow:hidden;position:relative}
+.hpbar i{position:absolute;inset:0 auto 0 0;background:var(--ok);border-radius:6px}
+.hpbar i.mid{background:var(--warn)} .hpbar i.low{background:var(--blood)}
+.hpbar b{position:absolute;inset:0 auto 0 0;background:var(--accent);opacity:.45}
+
+/* party cards */
+.pc{display:grid;gap:10px}
+.pc .top{display:flex;gap:12px;align-items:flex-start}
+.crest{flex:none;width:44px;height:50px;display:grid;place-items:center;font-family:var(--display);font-size:1.5rem;color:var(--accent-ink);background:var(--accent);clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%)}
+.pc h3{font-size:1.3rem;line-height:1.1}
+.sub{font-size:.88rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center}
+.stat{background:var(--sunk);border-radius:8px;padding:6px 2px}
+.stat b{display:block;font-family:var(--mono);font-size:1.05rem}
+.stat span{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hpline{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.hpline .big{font-family:var(--mono);font-size:1.4rem;font-weight:600}
+.down{color:var(--blood);font-weight:800}
+.lastroll{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.lastroll b{color:var(--fg);font-family:var(--mono)}
+
+/* sheet */
+.sheet{display:grid;gap:14px}
+.sheet h2{font-size:1.9rem;line-height:1.05}
+.sgrid{display:grid;gap:14px;grid-template-columns:1fr}
+@media (min-width:760px){.sgrid{grid-template-columns:1fr 1fr}}
+.abil{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (min-width:520px){.abil{grid-template-columns:repeat(6,1fr)}}
+.ab{border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:center;padding:8px 4px 6px;cursor:pointer}
+.ab .k{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.ab .m{font-family:var(--mono);font-size:1.5rem;font-weight:600;line-height:1.2}
+.ab .s{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.ab .sv{display:block;margin-top:4px;font-size:.74rem;border-top:1px dashed var(--line);padding-top:4px}
+.ab .sv.p{color:var(--accent);font-weight:700}
+.list{display:grid;gap:2px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;background:none;border:0;text-align:left;width:100%;cursor:pointer}
+button.li:hover{background:var(--sunk)}
+.li .num{font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;border:1px solid var(--muted);display:inline-block;margin-right:8px;vertical-align:middle}
+.dot.p{background:var(--accent);border-color:var(--accent)}
+.skills{display:grid;grid-template-columns:1fr;gap:0 12px}
+@media (min-width:420px){.skills{grid-template-columns:1fr 1fr}}
+.pips{display:flex;gap:6px;flex-wrap:wrap}
+.pip{width:26px;height:26px;border-radius:50%;border:2px solid var(--accent);background:none;cursor:pointer}
+.pip.used{background:var(--sunk);border-color:var(--line)}
+.pip.mark{background:var(--accent)} .pip.markf{background:var(--blood)}
+.feat summary{cursor:pointer;font-weight:700;padding:6px 0}
+.feat p{margin:0 0 8px;color:var(--muted);font-size:.92rem}
+.inv{display:grid;gap:6px}
+.inv .it{display:flex;gap:8px;align-items:center}
+.inv .it span{flex:1;min-width:0}
+.qty{width:64px!important}
+.k2{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.94rem}
+.k2 dt{color:var(--muted)} .k2 dd{margin:0}
+.secret{border-left:3px solid var(--brass);padding-left:10px}
+
+/* builder */
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps span{font-size:.78rem;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.steps span.now{border-color:var(--brass);color:var(--fg);font-weight:700}
+.steps span.done{color:var(--accent);border-color:var(--accent)}
+.choices{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.choice{text-align:left;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:12px 14px;cursor:pointer;display:grid;gap:4px}
+.choice h3{font-size:1.25rem}
+.choice p{margin:0;font-size:.9rem;color:var(--muted)}
+.choice .tags{font-size:.78rem;color:var(--brass);font-weight:700;letter-spacing:.04em}
+.choice[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.choice:disabled{opacity:.45;cursor:not-allowed}
+.arr{display:grid;gap:6px}
+.arr button{display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.arr button.sel{border-color:var(--brass);box-shadow:inset 0 0 0 2px var(--brass)}
+.arr .tot{font-family:var(--mono);font-weight:600;font-size:1.15rem;min-width:2ch;text-align:right}
+.navbar{position:sticky;bottom:0;padding-block:12px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%);display:flex;gap:10px;justify-content:space-between}
+
+/* encounter */
+.init{display:grid;gap:6px}
+.cb{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.cb.now{border-color:var(--brass);box-shadow:inset 4px 0 0 var(--brass)}
+.cb.npc .nm{color:var(--blood)}
+.cb .nm{font-weight:800}
+.cb input{min-height:34px;padding:4px 6px;text-align:center}
+.cb .side{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.state{font-size:.8rem;font-weight:700}
+.scene h2{font-size:1.7rem}
+.scene p{white-space:pre-wrap;max-width:65ch;margin:.4em 0 0;font-size:1.05rem}
+.log{display:grid;gap:6px;font-size:.94rem}
+.log div{border-left:2px solid var(--line);padding-left:10px}
+.guide{max-width:72ch}
+.guide h3{font-size:1.3rem;margin-top:8px}
+.guide p,.guide li{color:var(--fg)}
+.guide table{border-collapse:collapse;width:100%;font-size:.94rem}
+.guide td,.guide th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+
+/* overlay + dice */
+.ov{position:fixed;inset:0;z-index:40;background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:blur(3px);overflow-y:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 0 40px}
+.ov .card{max-width:980px;margin:0 auto;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px;margin-inline:12px}
+@media (min-width:1010px){.ov .card{margin-inline:auto}}
+.ovhead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;width:62px;height:62px;border-radius:50%;border:0;background:var(--brass);color:var(--bg);font-family:var(--display);font-size:1.3rem;box-shadow:0 6px 18px rgb(0 0 0 / .25);cursor:pointer}
+.tray{position:fixed;right:12px;left:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:31;max-width:380px;margin-left:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;box-shadow:0 10px 30px rgb(0 0 0 / .25)}
+.dice{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dice button{min-height:44px;border-radius:8px;border:1px solid var(--line);background:var(--bg);font-family:var(--mono);font-weight:600;cursor:pointer}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:none;padding:7px 4px;font-weight:700;font-size:.86rem;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.result{font-family:var(--mono);font-size:2.4rem;font-weight:600;line-height:1}
+.hist{font-size:.82rem;color:var(--muted);max-height:120px;overflow:auto;display:grid;gap:2px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;max-width:min(92vw,520px);font-weight:500;box-shadow:0 8px 24px rgb(0 0 0 / .25)}
+.toast b{font-family:var(--mono);font-size:1.2rem}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .18s ease-out}@keyframes up{from{opacity:0;transform:translate(-50%,8px)}}}
+</style>
+<style>
+/* Tarot direction: a deliberate single dark look, navy card stock with gold leaf. */
+:root,:root:not([data-theme="light"]),:root[data-theme="dark"],:root[data-theme="light"]{--bg:#0E1630;--surface:#15224A;--sunk:#1B2B58;--fg:#ECE4CF;--muted:#9EA8C8;--line:#33467C;--accent:#D9B45B;--accent-ink:#0E1630;--brass:#D9B45B;--blood:#E8837A;--ok:#8FC79A;--warn:#E3B95E;--display:"Cinzel",Georgia,serif;--body:"Spectral",Georgia,serif;color-scheme:dark}
+h1,h2,h3{letter-spacing:.04em}
+.brand{font-size:1.05rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.brand small{letter-spacing:.2em;font-family:var(--display)}
+.btn{font-family:var(--display);letter-spacing:.08em;font-size:.88rem}
+.btn.pri{border-radius:999px}
+.choice{background:linear-gradient(var(--surface),var(--bg));border-color:var(--line)}
+.choice[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 0 18px rgb(217 180 91 / .2)}
+.deck{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:10px}
+.tcard{aspect-ratio:2/3.2;border:1px solid var(--accent);border-radius:9px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;background:linear-gradient(#18285A,#0E1630);position:relative;cursor:pointer;color:var(--fg)}
+.tcard:before{content:"";position:absolute;inset:4px;border:1px solid rgb(217 180 91 / .35);border-radius:6px;pointer-events:none}
+.tcard[aria-pressed="true"]{background:linear-gradient(#2C3F78,#18285A);box-shadow:0 0 0 2px var(--accent),0 0 24px rgb(217 180 91 / .35)}
+.tcard .tn{font-family:var(--display);font-size:.66rem;color:var(--accent);letter-spacing:.12em}
+.tcard b{font-family:var(--display);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;line-height:1.2}
+.tcard svg.sig{width:44px;height:44px;color:var(--accent)}
+.glyph{width:46px;height:46px;border:1px solid var(--accent);border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:1.35rem;color:var(--accent)}
+.tdesc{border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-align:center;background:var(--surface)}
+.tdesc p{margin:.2em 0;font-style:italic;font-size:1.02rem}
+.tdesc .tags{font-family:var(--display);font-size:.72rem;letter-spacing:.1em;color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.tcard{transition:transform .15s ease}.tcard[aria-pressed="true"]{transform:translateY(-3px)}}
+body{margin:0;padding-top:env(safe-area-inset-top,0px)}
+.who{display:grid;gap:4px}
+.prow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.prow h3{font-size:1.25rem}
+.link{font-family:var(--mono);font-size:.78rem;word-break:break-all;color:var(--muted)}
+.tip{border-left:3px solid var(--brass);padding:4px 0 4px 10px;color:var(--muted);font-size:.92rem}
+.ab{cursor:default}
+.li{cursor:default}
+header.top,main.wrap,.navbar{position:relative;z-index:2}
+header.top{position:sticky}
+.corners .cn{position:fixed;width:min(30vw,220px);aspect-ratio:1;color:var(--accent);opacity:.08;z-index:1;pointer-events:none}
+.corners .cn svg{width:100%;height:100%;display:block}
+.cn.tl{top:0;left:0}.cn.tr{top:0;right:0;transform:scaleX(-1)}.cn.bl{bottom:0;left:0;transform:scaleY(-1)}.cn.br{bottom:0;right:0;transform:scale(-1,-1)}
+.fx{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.fx canvas{position:absolute;inset:0;width:100%;height:100%}
+.fx>div,.fx .web{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease}
+.fx-glow{background:radial-gradient(120% 90% at 50% 110%,rgb(255 170 70 / .22),transparent 60%),radial-gradient(80% 60% at 50% -10%,rgb(255 190 110 / .08),transparent 70%)}
+.fx-fog{background:radial-gradient(60% 30% at 20% 80%,rgb(200 210 230 / .14),transparent 70%),radial-gradient(60% 30% at 80% 60%,rgb(200 210 230 / .12),transparent 70%),radial-gradient(70% 35% at 50% 100%,rgb(200 210 230 / .18),transparent 70%);background-size:200% 100%}
+.fx-flash{background:rgb(220 230 255 / .9)}
+.fx .web{inset:auto;width:min(40vw,260px);aspect-ratio:1;color:#C9CED8}
+.fx .web svg{width:100%;height:100%}
+.web.wl{top:0;left:0}.web.wr{top:0;right:0;transform:scaleX(-1)}
+body[data-mood="tavern"] .fx-glow{opacity:1}
+body[data-mood="cellar"] .web{opacity:.22}
+body[data-mood="cellar"] .fx-glow{opacity:.35;filter:hue-rotate(-20deg)}
+body[data-mood="fog"] .fx-fog,body[data-mood="cellar"] .fx-fog{opacity:1}
+body[data-mood="storm"] .fx-fog{opacity:.5}
+@media (prefers-reduced-motion:no-preference){
+ body[data-mood="tavern"] .fx-glow{animation:flicker 3.2s infinite alternate ease-in-out}
+ @keyframes flicker{0%{opacity:.85}20%{opacity:1}35%{opacity:.78}60%{opacity:.95}80%{opacity:.82}100%{opacity:1}}
+ body[data-mood="fog"] .fx-fog,body[data-mood="cellar"] .fx-fog,body[data-mood="storm"] .fx-fog{animation:drift 40s linear infinite alternate}
+ @keyframes drift{from{background-position:0 0}to{background-position:-100% 0}}
+ .fx-flash.go{animation:flash 1.1s ease-out}
+ @keyframes flash{0%{opacity:0}4%{opacity:.75}8%{opacity:.05}12%{opacity:.5}40%{opacity:0}}
+}
+.moods{display:flex;gap:6px;flex-wrap:wrap}
+header.top{background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.panel.scene{background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(2px)}
+.fx .fx-fog{left:-50%;right:-50%;background-size:auto}
+@media (prefers-reduced-motion:no-preference){body[data-mood="fog"] .fx-fog,body[data-mood="cellar"] .fx-fog,body[data-mood="storm"] .fx-fog{animation:drift2 38s ease-in-out infinite alternate}@keyframes drift2{from{transform:translateX(-18%)}to{transform:translateX(18%)}}}
+.mon .art{position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:cover;border-radius:7px}
+.mon.has-art:after{content:"";position:absolute;inset:4px;border-radius:7px;background:linear-gradient(rgb(20 14 30 / .55),transparent 30%,transparent 62%,rgb(20 14 30 / .85))}
+.mon>*:not(.art){position:relative;z-index:1}
+.portrait{max-width:300px;width:100%;margin:0 auto;border:1px solid var(--accent);border-radius:14px;padding:6px;background:var(--surface);box-shadow:0 0 34px rgb(217 180 91 / .25)}
+.portrait img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:9px;display:block}
+@media (prefers-reduced-motion:no-preference){.portrait.new{animation:flip 1.1s ease-out}}
+.thumb{width:44px;height:66px;object-fit:cover;border-radius:6px;border:1px solid var(--accent);flex:none}
+.artrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+label.btn input[type=file]{display:none}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.brand small.wink{font-family:var(--body);font-style:italic;text-transform:none;letter-spacing:.02em;font-size:.9rem;color:var(--muted);margin-top:2px}
+.mons{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.mon{aspect-ratio:2/3;border:1px solid var(--blood);border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;background:linear-gradient(#3A1C2A,#140E1E);position:relative}
+.mon:before{content:"";position:absolute;inset:4px;border:1px solid rgb(232 131 122 / .35);border-radius:7px;pointer-events:none}
+.mon b{font-family:var(--display);letter-spacing:.08em;text-transform:uppercase;font-size:.85rem}
+.mon .glyph{border-color:var(--blood);color:var(--blood)}
+.mon .st{font-family:var(--display);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase}
+.mon.down{opacity:.45;filter:grayscale(.6)}
+.mon p{margin:0;font-size:.82rem;font-style:italic;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.mon.new{animation:flip .7s ease-out}@keyframes flip{0%{transform:perspective(600px) rotateY(90deg);opacity:0}100%{transform:none;opacity:1}}}
+.scene h2{font-size:1.8rem}
+.scene p{white-space:pre-wrap;max-width:62ch;margin:.5em 0 0;font-size:1.1rem}
+body.tv .wrap{max-width:1500px}
+body.tv .scene h2{font-size:3rem}
+body.tv .scene p{font-size:1.6rem;max-width:50ch}
+body.tv .mons{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+body.tv .mon b{font-size:1.15rem}
+.dmon{display:grid;gap:8px}
+.dmon.hidden{border-style:dashed;opacity:.85}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="s-sword" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M24 3h5v5L16 21l-5-5z M8 19l5 5 M6 21l-3 3 2 2 3-3 M10 17l-3 3 5 5 3-3"/></g></symbol><symbol id="s-dagger" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M16 3l3 6v12h-6V9z M10 21h12 M16 21v8 M14 29h4"/></g></symbol><symbol id="s-star" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M16 3l2.6 8.4H27l-6.8 5 2.6 8.4L16 19.8l-6.8 5 2.6-8.4-6.8-5h8.4z"/></g></symbol><symbol id="s-axe" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M16 4v25 M16 7c6 0 10 3 10 8-4-1-7 0-10 2 M16 7c-6 0-10 3-10 8 4-1 7 0 10 2"/></g></symbol><symbol id="s-lute" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="13" cy="21" rx="7" ry="8"/><circle cx="13" cy="21" r="2"/><path d="M18 15l9-11 M24 3l4 3"/></g></symbol><symbol id="s-sun" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><circle cx="16" cy="16" r="5.5"/><path d="M16 3v4 M16 25v4 M3 16h4 M25 16h4 M6.8 6.8l2.8 2.8 M22.4 22.4l2.8 2.8 M6.8 25.2l2.8-2.8 M22.4 9.6l2.8-2.8"/></g></symbol><symbol id="s-shield" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M16 3l11 4v8c0 7-5 12-11 14C10 27 5 22 5 15V7z M16 9v14 M10 15h12"/></g></symbol><symbol id="s-bow" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M8 3c10 4 14 9 14 13s-4 9-14 13 M8 3v26 M4 16h22 M22 13l4 3-4 3"/></g></symbol></svg>
+<header class="top">
+  <div class="bar">
+    <div class="brand" id="brand">The Guild of Second Chances<small id="sub" class="wink">(and poor decisions)</small></div>
+    <div class="role" id="role"></div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+</header>
+<div class="corners" aria-hidden="true"><span class="cn tl"><svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+<circle cx="60" cy="60" r="34"/><circle cx="60" cy="60" r="27" stroke-width="1"/>
+<g id="kl"><path d="M60 22 C82 46 82 66 60 82 C38 66 38 46 60 22 Z"/></g>
+<use href="#kl" transform="rotate(120 60 60)"/><use href="#kl" transform="rotate(240 60 60)"/>
+<path d="M94 60 C120 60 128 40 146 40 C162 40 166 58 154 64 C144 69 136 58 144 52" />
+<path d="M60 94 C60 120 40 128 40 146 C40 162 58 166 64 154 C69 144 58 136 52 144" />
+<path d="M150 40 C170 40 186 30 196 14" stroke-width="1.2"/><path d="M40 150 C40 170 30 186 14 196" stroke-width="1.2"/>
+<g transform="translate(150 150)"><path d="M0 0 c0 -9 10 -12 15 -6 c5 6 -1 14 -7 11 c-5 -2 -3 -8 1 -7" /><path d="M0 0 c8 4 7 15 -1 16 c-8 1 -11 -9 -5 -12 c5 -3 9 2 6 5" /><path d="M0 0 c-8 5 -17 -2 -14 -9 c3 -7 13 -6 13 1 c0 5 -6 6 -7 2" /></g>
+</g></svg></span><span class="cn tr"><svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+<circle cx="60" cy="60" r="34"/><circle cx="60" cy="60" r="27" stroke-width="1"/>
+<g id="kl"><path d="M60 22 C82 46 82 66 60 82 C38 66 38 46 60 22 Z"/></g>
+<use href="#kl" transform="rotate(120 60 60)"/><use href="#kl" transform="rotate(240 60 60)"/>
+<path d="M94 60 C120 60 128 40 146 40 C162 40 166 58 154 64 C144 69 136 58 144 52" />
+<path d="M60 94 C60 120 40 128 40 146 C40 162 58 166 64 154 C69 144 58 136 52 144" />
+<path d="M150 40 C170 40 186 30 196 14" stroke-width="1.2"/><path d="M40 150 C40 170 30 186 14 196" stroke-width="1.2"/>
+<g transform="translate(150 150)"><path d="M0 0 c0 -9 10 -12 15 -6 c5 6 -1 14 -7 11 c-5 -2 -3 -8 1 -7" /><path d="M0 0 c8 4 7 15 -1 16 c-8 1 -11 -9 -5 -12 c5 -3 9 2 6 5" /><path d="M0 0 c-8 5 -17 -2 -14 -9 c3 -7 13 -6 13 1 c0 5 -6 6 -7 2" /></g>
+</g></svg></span><span class="cn bl"><svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+<circle cx="60" cy="60" r="34"/><circle cx="60" cy="60" r="27" stroke-width="1"/>
+<g id="kl"><path d="M60 22 C82 46 82 66 60 82 C38 66 38 46 60 22 Z"/></g>
+<use href="#kl" transform="rotate(120 60 60)"/><use href="#kl" transform="rotate(240 60 60)"/>
+<path d="M94 60 C120 60 128 40 146 40 C162 40 166 58 154 64 C144 69 136 58 144 52" />
+<path d="M60 94 C60 120 40 128 40 146 C40 162 58 166 64 154 C69 144 58 136 52 144" />
+<path d="M150 40 C170 40 186 30 196 14" stroke-width="1.2"/><path d="M40 150 C40 170 30 186 14 196" stroke-width="1.2"/>
+<g transform="translate(150 150)"><path d="M0 0 c0 -9 10 -12 15 -6 c5 6 -1 14 -7 11 c-5 -2 -3 -8 1 -7" /><path d="M0 0 c8 4 7 15 -1 16 c-8 1 -11 -9 -5 -12 c5 -3 9 2 6 5" /><path d="M0 0 c-8 5 -17 -2 -14 -9 c3 -7 13 -6 13 1 c0 5 -6 6 -7 2" /></g>
+</g></svg></span><span class="cn br"><svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+<circle cx="60" cy="60" r="34"/><circle cx="60" cy="60" r="27" stroke-width="1"/>
+<g id="kl"><path d="M60 22 C82 46 82 66 60 82 C38 66 38 46 60 22 Z"/></g>
+<use href="#kl" transform="rotate(120 60 60)"/><use href="#kl" transform="rotate(240 60 60)"/>
+<path d="M94 60 C120 60 128 40 146 40 C162 40 166 58 154 64 C144 69 136 58 144 52" />
+<path d="M60 94 C60 120 40 128 40 146 C40 162 58 166 64 154 C69 144 58 136 52 144" />
+<path d="M150 40 C170 40 186 30 196 14" stroke-width="1.2"/><path d="M40 150 C40 170 30 186 14 196" stroke-width="1.2"/>
+<g transform="translate(150 150)"><path d="M0 0 c0 -9 10 -12 15 -6 c5 6 -1 14 -7 11 c-5 -2 -3 -8 1 -7" /><path d="M0 0 c8 4 7 15 -1 16 c-8 1 -11 -9 -5 -12 c5 -3 9 2 6 5" /><path d="M0 0 c-8 5 -17 -2 -14 -9 c3 -7 13 -6 13 1 c0 5 -6 6 -7 2" /></g>
+</g></svg></span></div>
+<div class="fx" id="fx" aria-hidden="true"><canvas id="fxc"></canvas><div class="fx-glow"></div><div class="fx-fog"></div><div class="fx-flash"></div><span class="web wl"><svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
+<path d="M0 0 L200 120 M0 0 L160 160 M0 0 L120 200 M0 0 L60 200 M0 0 L200 60"/>
+<path d="M40 24 Q36 36 32 32 Q30 40 24 40"/><path d="M80 48 Q70 66 64 64 Q58 76 48 80"/><path d="M120 72 Q104 96 96 96 Q86 112 72 120"/><path d="M160 96 Q138 126 128 128 Q114 150 96 160"/>
+<path d="M32 32 Q20 42 16 48"/><path d="M64 64 Q44 80 34 96"/><path d="M96 96 Q70 118 52 144"/>
+<path d="M200 60 Q180 80 160 96"/><path d="M200 120 Q178 140 160 160"/>
+</g></svg></span><span class="web wr"><svg viewBox="0 0 200 200"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
+<path d="M0 0 L200 120 M0 0 L160 160 M0 0 L120 200 M0 0 L60 200 M0 0 L200 60"/>
+<path d="M40 24 Q36 36 32 32 Q30 40 24 40"/><path d="M80 48 Q70 66 64 64 Q58 76 48 80"/><path d="M120 72 Q104 96 96 96 Q86 112 72 120"/><path d="M160 96 Q138 126 128 128 Q114 150 96 160"/>
+<path d="M32 32 Q20 42 16 48"/><path d="M64 64 Q44 80 34 96"/><path d="M96 96 Q70 118 52 144"/>
+<path d="M200 60 Q180 80 160 96"/><path d="M200 120 Q178 140 160 160"/>
+</g></svg></span></div>
+<main class="wrap" id="main"><p class="banner">Loading…</p></main>
+<div id="ov"></div>
+<div id="toast" class="toast" hidden></div>
+<script>
+/* Fill these two after the database exists. Left empty, the page runs in demo mode and keeps everything on this device. */
+window.WT_CONFIG={url:'https://opauhxagxxavkwomryhv.supabase.co',key:'sb_publishable_2iXxbeoWJ-pR4JWVQVpOhA_CfRjFifX',name:'The Guild of Second Chances'};
+</script>
+<script>
+(()=>{'use strict';
+/* ---------- rules data (simplified 5e, levels 1 to 5) ---------- */
+const AB=['str','dex','con','int','wis','cha'];
+const ABN={str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
+const ABS={str:'STR',dex:'DEX',con:'CON',int:'INT',wis:'WIS',cha:'CHA'};
+const ARRAY=[15,14,13,12,10,8];
+const SK={'Acrobatics':'dex','Animal Handling':'wis','Arcana':'int','Athletics':'str','Deception':'cha','History':'int','Insight':'wis','Intimidation':'cha','Investigation':'int','Medicine':'wis','Nature':'int','Perception':'wis','Performance':'cha','Persuasion':'cha','Religion':'int','Sleight of Hand':'dex','Stealth':'dex','Survival':'wis'};
+const SKILLHELP={'Acrobatics':'balance, tumbling, slipping free','Animal Handling':'calming or steering animals','Arcana':'magic lore','Athletics':'climbing, swimming, shoving','Deception':'lying convincingly','History':'old wars, kings and ruins','Insight':'reading people','Intimidation':'threats that land','Investigation':'searching and deducing','Medicine':'stabilising the hurt','Nature':'plants, beasts, weather','Perception':'noticing things','Performance':'music, acting, storytelling','Persuasion':'honest charm','Religion':'gods and rites','Sleight of Hand':'pickpocketing, palming','Stealth':'staying unseen','Survival':'tracking and wayfinding'};
+
+const ANC={
+ human:{name:'Human',blurb:'Adaptable and ambitious. A little better at everything.',bonus:{str:1,dex:1,con:1,int:1,wis:1,cha:1},speed:30,traits:[['Versatile','+1 to every ability score.'],['Extra language','You speak one more language of your choice.']]},
+ elf:{name:'Elf',blurb:'Graceful, long-lived and sharp-eyed, with a touch of the fey.',bonus:{dex:2,int:1},speed:30,skills:['Perception'],traits:[['Darkvision','See in dim light within 60 ft as if it were bright.'],['Keen senses','Proficient in Perception.'],['Fey ancestry','Advantage on saves against being charmed; magic cannot put you to sleep.'],['Trance','Four hours of meditation counts as a full night’s sleep.']]},
+ dwarf:{name:'Dwarf',blurb:'Stubborn, sturdy and hard to kill. Remembers every grudge.',bonus:{con:2,wis:1},speed:25,traits:[['Darkvision','See in dim light within 60 ft.'],['Dwarven resilience','Advantage on saves against poison, resistance to poison damage.'],['Dwarven toughness','+1 hit point per level.'],['Stonecunning','Double proficiency on History checks about stonework.']]},
+ halfling:{name:'Halfling',blurb:'Small, cheerful and improbably lucky.',bonus:{dex:2,cha:1},speed:25,traits:[['Lucky','When you roll a 1 on a d20, reroll it and use the new roll.'],['Brave','Advantage on saves against being frightened.'],['Nimble','Move through the space of anyone larger than you.']]},
+ gnome:{name:'Gnome',blurb:'Curious tinkerers with quick minds and quicker tongues.',bonus:{int:2,con:1},speed:25,traits:[['Darkvision','See in dim light within 60 ft.'],['Gnome cunning','Advantage on Intelligence, Wisdom and Charisma saves against magic.']]},
+ halforc:{name:'Half-Orc',blurb:'Fierce, enduring and very hard to put down.',bonus:{str:2,con:1},speed:30,skills:['Intimidation'],res:[{key:'relentless',label:'Relentless Endurance',max:()=>1,rest:'long',help:'Drop to 1 HP instead of 0, once per long rest.'}],traits:[['Darkvision','See in dim light within 60 ft.'],['Menacing','Proficient in Intimidation.'],['Relentless endurance','When you would drop to 0 HP, drop to 1 instead (once per long rest).'],['Savage attacks','On a critical hit with a weapon, roll one extra weapon die.']]},
+ tiefling:{name:'Tiefling',blurb:'Infernal blood, horns and a silver tongue. People stare.',bonus:{cha:2,int:1},speed:30,traits:[['Darkvision','See in dim light within 60 ft.'],['Hellish resistance','Resistance to fire damage.'],['Infernal legacy','You know the Thaumaturgy cantrip.']]},
+ dragonborn:{name:'Dragonborn',blurb:'Proud, draconic and able to breathe elemental fire (or frost, or lightning).',bonus:{str:2,cha:1},speed:30,res:[{key:'breath',label:'Breath Weapon',max:()=>1,rest:'short',help:'Dex save DC shown on your sheet, 2d6 damage in a 15 ft cone.'}],traits:[['Breath weapon','15 ft cone, Dexterity save (DC 8 + CON + proficiency), 2d6 damage, half on a success. Once per short rest.'],['Draconic resistance','Resistance to the damage type of your breath.']]}
+};
+
+const SPELLS={
+ 'Fire Bolt':{l:0,t:'Ranged spell attack, 120 ft. 1d10 fire.',atk:1,d:'1d10'},
+ 'Ray of Frost':{l:0,t:'Ranged spell attack, 60 ft. 1d8 cold and the target is slowed by 10 ft.',atk:1,d:'1d8'},
+ 'Shocking Grasp':{l:0,t:'Melee spell attack. 1d8 lightning, advantage against metal armour, target cannot take reactions.',atk:1,d:'1d8'},
+ 'Mage Hand':{l:0,t:'A floating spectral hand that carries up to 10 lb, 30 ft away.'},
+ 'Light':{l:0,t:'An object glows like a torch for an hour.'},
+ 'Minor Illusion':{l:0,t:'Create a sound or a small still image for a minute.'},
+ 'Prestidigitation':{l:0,t:'Small magic tricks: clean, chill, flavour, spark, sound.'},
+ 'Vicious Mockery':{l:0,t:'Insult a creature. Wisdom save or 1d4 psychic and disadvantage on its next attack.',save:'wis',d:'1d4'},
+ 'Sacred Flame':{l:0,t:'Radiant flame from above. Dexterity save or 1d8 radiant. Ignores cover.',save:'dex',d:'1d8'},
+ 'Toll the Dead':{l:0,t:'A mournful bell. Wisdom save or 1d8 necrotic (1d12 if already hurt).',save:'wis',d:'1d8'},
+ 'Guidance':{l:0,t:'Touch an ally: they add 1d4 to one ability check.',d:'1d4'},
+ 'Spare the Dying':{l:0,t:'Stabilise a creature at 0 HP.'},
+ 'Thaumaturgy':{l:0,t:'Booming voice, flickering flames, tremors, slamming doors.'},
+ 'Magic Missile':{l:1,t:'Three glowing darts that never miss, 1d4+1 force each.',d:'3d4+3'},
+ 'Shield':{l:1,t:'Reaction when hit: +5 AC until your next turn.'},
+ 'Sleep':{l:1,t:'Creatures with 5d8 total HP, weakest first, fall asleep for a minute.',d:'5d8'},
+ 'Mage Armor':{l:1,t:'Your AC becomes 13 + DEX for 8 hours (no armour).'},
+ 'Burning Hands':{l:1,t:'15 ft cone of fire. Dexterity save, 3d6 fire, half on a success.',save:'dex',d:'3d6'},
+ 'Thunderwave':{l:1,t:'15 ft cube of thunder. Constitution save, 2d8 and pushed 10 ft, half on a success.',save:'con',d:'2d8'},
+ 'Detect Magic':{l:1,t:'Sense magic within 30 ft for 10 minutes.'},
+ 'Feather Fall':{l:1,t:'Reaction: up to five falling creatures drift down safely.'},
+ 'Charm Person':{l:1,t:'Wisdom save or a humanoid regards you as a friend for an hour.',save:'wis'},
+ 'Healing Word':{l:1,t:'Bonus action, 60 ft. Heal 1d4 + your spellcasting modifier.',d:'1d4+M',heal:1},
+ 'Cure Wounds':{l:1,t:'Touch. Heal 1d8 + your spellcasting modifier.',d:'1d8+M',heal:1},
+ 'Dissonant Whispers':{l:1,t:'Wisdom save or 3d6 psychic and the target must move away from you.',save:'wis',d:'3d6'},
+ 'Faerie Fire':{l:1,t:'Dexterity save or creatures glow; attacks against them have advantage.',save:'dex'},
+ 'Heroism':{l:1,t:'An ally is immune to fear and gains temporary HP each turn.'},
+ 'Bless':{l:1,t:'Up to three allies add 1d4 to attacks and saves for a minute.',d:'1d4'},
+ 'Guiding Bolt':{l:1,t:'Ranged spell attack, 4d6 radiant; the next attack on the target has advantage.',atk:1,d:'4d6'},
+ 'Shield of Faith':{l:1,t:'+2 AC to a creature for 10 minutes (concentration).'},
+ 'Sanctuary':{l:1,t:'Enemies must pass a Wisdom save to attack the warded creature.'},
+ 'Command':{l:1,t:'One-word command (Flee! Grovel! Drop!). Wisdom save or obey.',save:'wis'},
+ 'Inflict Wounds':{l:1,t:'Melee spell attack, 3d10 necrotic.',atk:1,d:'3d10'},
+ 'Hunter’s Mark':{l:1,t:'Bonus action: your weapon hits on the marked target deal +1d6.',d:'1d6'},
+ 'Cure Wounds (Ranger)':{l:1,t:'Touch. Heal 1d8 + your spellcasting modifier.',d:'1d8+M',heal:1},
+ 'Goodberry':{l:1,t:'Ten berries, each heals 1 HP.'},
+ 'Fog Cloud':{l:1,t:'A 20 ft sphere of thick fog.'},
+ 'Divine Favor':{l:1,t:'Bonus action: your weapon hits deal +1d4 radiant for a minute.',d:'1d4'},
+ 'Thunderous Smite':{l:1,t:'Next melee hit deals +2d6 thunder and pushes the target 10 ft.',d:'2d6'}
+};
+
+const CLS={
+ barbarian:{name:'Barbarian',blurb:'A storm of muscle and fury. Hits hard, shrugs off hits.',tags:'Tough · Simple to play',die:12,saves:['str','con'],pick:2,from:['Animal Handling','Athletics','Intimidation','Nature','Perception','Survival'],
+  arr:{str:15,con:14,dex:13,wis:12,cha:10,int:8},ac:m=>10+m.dex+m.con,acText:'Unarmoured defence (10 + DEX + CON)',
+  attacks:[{n:'Greataxe',ab:'str',d:'1d12',t:'slashing'},{n:'Handaxe (thrown 20 ft)',ab:'str',d:'1d6',t:'slashing'}],
+  gear:['Greataxe','Handaxe','Handaxe','Explorer’s pack','Javelin','Javelin','Javelin','Javelin'],
+  res:[{key:'rage',label:'Rage',max:l=>l<3?2:3,rest:'long',help:'Bonus action. +2 melee damage, resistance to physical damage, advantage on Strength checks. One minute.'}],
+  features:[[1,'Rage','Bonus action to rage: +2 damage on Strength attacks, resistance to bludgeoning, piercing and slashing, advantage on Strength checks and saves.'],[1,'Unarmoured defence','Without armour your AC is 10 + DEX + CON.'],[2,'Reckless attack','Attack with advantage this turn, but attacks against you also have advantage.'],[2,'Danger sense','Advantage on Dexterity saves against things you can see.'],[3,'Primal path','Choose your path with the DM (Berserker is the simplest).'],[5,'Extra attack','Attack twice when you take the Attack action.'],[5,'Fast movement','+10 ft speed without heavy armour.']]},
+ bard:{name:'Bard',blurb:'Charm, wit and music that bends reality. Helps the whole party shine.',tags:'Talker · Healer · Magic',die:8,saves:['dex','cha'],pick:3,from:Object.keys(SK),
+  arr:{cha:15,dex:14,con:13,wis:12,int:10,str:8},ac:m=>11+m.dex,acText:'Leather armour (11 + DEX)',
+  attacks:[{n:'Rapier',ab:'dex',d:'1d8',t:'piercing'},{n:'Dagger',ab:'dex',d:'1d4',t:'piercing'}],
+  gear:['Rapier','Dagger','Leather armour','Lute','Entertainer’s pack'],
+  res:[{key:'insp',label:'Bardic Inspiration',max:(l,m)=>Math.max(1,m.cha),rest:'long',help:'Bonus action: an ally gets a d6 to add to one roll.'}],
+  cast:{ab:'cha',full:1,cantrips:2,spells:4,cl:['Vicious Mockery','Minor Illusion','Light','Mage Hand','Prestidigitation'],sl:['Healing Word','Cure Wounds','Dissonant Whispers','Faerie Fire','Sleep','Thunderwave','Charm Person','Heroism']},
+  features:[[1,'Bardic inspiration','Give an ally a d6 to add to one attack, check or save in the next 10 minutes.'],[1,'Spellcasting','Charisma-based spells. You know a fixed list.'],[2,'Jack of all trades','Add half your proficiency to checks you are not proficient in.'],[2,'Song of rest','Allies who spend hit dice on a short rest regain an extra 1d6.'],[3,'Bard college and expertise','Choose a college with the DM; double proficiency in two skills.'],[5,'Font of inspiration','Bardic Inspiration comes back on a short rest and becomes a d8.']]},
+ cleric:{name:'Cleric',blurb:'A holy warrior with armour, healing and radiant fire. The party’s lifeline.',tags:'Healer · Sturdy · Magic',die:8,saves:['wis','cha'],pick:2,from:['History','Insight','Medicine','Persuasion','Religion'],
+  arr:{wis:15,con:14,str:13,dex:12,cha:10,int:8},ac:m=>14+Math.min(m.dex,2)+2,acText:'Scale mail and shield (14 + DEX up to 2, +2)',
+  attacks:[{n:'Mace',ab:'str',d:'1d6',t:'bludgeoning'},{n:'Light crossbow',ab:'dex',d:'1d8',t:'piercing'}],
+  gear:['Mace','Scale mail','Shield','Light crossbow and 20 bolts','Priest’s pack','Holy symbol'],
+  res:[{key:'cd',label:'Channel Divinity',max:l=>l>=2?1:0,rest:'short',help:'Turn Undead, or Preserve Life (heal 5 × level split among allies).'}],
+  cast:{ab:'wis',full:1,cantrips:3,spells:3,always:['Bless','Cure Wounds'],cl:['Sacred Flame','Toll the Dead','Guidance','Light','Spare the Dying','Thaumaturgy'],sl:['Healing Word','Guiding Bolt','Shield of Faith','Sanctuary','Command','Inflict Wounds','Detect Magic']},
+  features:[[1,'Spellcasting','Wisdom-based divine magic.'],[1,'Life domain','Bless and Cure Wounds are always prepared. Heavy armour.'],[1,'Disciple of life','Healing spells restore an extra 2 + the spell’s level.'],[2,'Channel Divinity','Turn Undead or Preserve Life, once per short rest.'],[5,'Destroy undead','Turned weak undead are destroyed outright.']]},
+ fighter:{name:'Fighter',blurb:'Trained, armoured and dependable. The best at fighting, full stop.',tags:'Simple to play · Tough',die:10,saves:['str','con'],pick:2,from:['Acrobatics','Animal Handling','Athletics','History','Insight','Intimidation','Perception','Survival'],
+  arr:{str:15,con:14,dex:13,wis:12,cha:10,int:8},ac:()=>19,acText:'Chain mail, shield, Defence style (16 + 2 + 1)',
+  attacks:[{n:'Longsword',ab:'str',d:'1d8',t:'slashing'},{n:'Light crossbow',ab:'dex',d:'1d8',t:'piercing'}],
+  gear:['Chain mail','Longsword','Shield','Light crossbow and 20 bolts','Dungeoneer’s pack'],
+  res:[{key:'wind',label:'Second Wind',max:()=>1,rest:'short',help:'Bonus action: heal 1d10 + your level.'},{key:'surge',label:'Action Surge',max:l=>l>=2?1:0,rest:'short',help:'Take one extra action this turn.'}],
+  features:[[1,'Fighting style: Defence','+1 AC while wearing armour (already included).'],[1,'Second wind','Bonus action: regain 1d10 + level HP, once per short rest.'],[2,'Action surge','One extra action on your turn, once per short rest.'],[3,'Champion','Your weapon attacks crit on a 19 or 20.'],[5,'Extra attack','Attack twice when you take the Attack action.']]},
+ paladin:{name:'Paladin',blurb:'A knight bound by an oath. Heavy armour, healing hands and holy smites.',tags:'Tough · Leader · Some magic',die:10,saves:['wis','cha'],pick:2,from:['Athletics','Insight','Intimidation','Medicine','Persuasion','Religion'],
+  arr:{str:15,cha:14,con:13,wis:12,dex:10,int:8},ac:()=>18,acText:'Chain mail and shield (16 + 2)',
+  attacks:[{n:'Longsword',ab:'str',d:'1d8',t:'slashing'},{n:'Javelin (thrown 30 ft)',ab:'str',d:'1d6',t:'piercing'}],
+  gear:['Chain mail','Longsword','Shield','Javelin','Javelin','Javelin','Javelin','Javelin','Priest’s pack','Holy symbol'],
+  res:[{key:'loh',label:'Lay on Hands (HP pool)',max:l=>5*l,rest:'long',help:'Touch to heal from this pool, or spend 5 to cure a disease or poison.'}],
+  cast:{ab:'cha',full:0,cantrips:0,spells:0,cl:[],sl:['Bless','Cure Wounds','Divine Favor','Shield of Faith','Thunderous Smite','Command']},
+  features:[[1,'Divine sense','Sense celestials, fiends and undead within 60 ft.'],[1,'Lay on hands','A pool of 5 × level HP you heal by touch.'],[2,'Divine smite','After a melee hit, spend a spell slot for +2d8 radiant (more against undead).'],[2,'Spellcasting','Charisma-based. Learn spells from your sheet as you level.'],[3,'Sacred oath','Choose your oath with the DM.'],[5,'Extra attack','Attack twice when you take the Attack action.']]},
+ ranger:{name:'Ranger',blurb:'A tracker and hunter of the wild places. Deadly with a bow.',tags:'Archer · Explorer · Some magic',die:10,saves:['str','dex'],pick:3,from:['Animal Handling','Athletics','Insight','Investigation','Nature','Perception','Stealth','Survival'],
+  arr:{dex:15,wis:14,con:13,str:12,int:10,cha:8},ac:m=>11+m.dex,acText:'Leather armour (11 + DEX)',
+  attacks:[{n:'Longbow (150 ft)',ab:'dex',d:'1d8',t:'piercing'},{n:'Shortsword',ab:'dex',d:'1d6',t:'piercing'}],
+  gear:['Leather armour','Shortsword','Shortsword','Longbow and 20 arrows','Explorer’s pack'],
+  cast:{ab:'wis',full:0,cantrips:0,spells:0,cl:[],sl:['Hunter’s Mark','Cure Wounds (Ranger)','Goodberry','Fog Cloud']},
+  features:[[1,'Favoured enemy','Pick a creature type with the DM: advantage on tracking and recalling lore about it.'],[1,'Natural explorer','Pick a favoured terrain: your group cannot get lost there.'],[2,'Fighting style and spells','Archery (+2 to hit with bows) and Wisdom-based spells.'],[3,'Ranger archetype','Hunter is the simplest.'],[5,'Extra attack','Attack twice when you take the Attack action.']]},
+ rogue:{name:'Rogue',blurb:'Sneaky, skilful and devastating when an enemy is distracted.',tags:'Skills · Sneaky · Big hits',die:8,saves:['dex','int'],pick:4,from:['Acrobatics','Athletics','Deception','Insight','Intimidation','Investigation','Perception','Performance','Persuasion','Sleight of Hand','Stealth'],
+  arr:{dex:15,con:14,cha:13,wis:12,int:10,str:8},ac:m=>11+m.dex,acText:'Leather armour (11 + DEX)',
+  attacks:[{n:'Shortsword',ab:'dex',d:'1d6',t:'piercing'},{n:'Shortbow (80 ft)',ab:'dex',d:'1d6',t:'piercing'},{n:'Dagger',ab:'dex',d:'1d4',t:'piercing'}],
+  gear:['Shortsword','Shortbow and 20 arrows','Leather armour','Dagger','Dagger','Thieves’ tools','Burglar’s pack'],
+  features:[[1,'Sneak attack','Once a turn, add extra d6s when you have advantage or an ally is next to your target.'],[1,'Expertise','Double proficiency in two of your skills (tell the DM which).'],[1,'Thieves’ cant','A secret language of signs and slang.'],[2,'Cunning action','Bonus action: Dash, Disengage or Hide.'],[3,'Archetype','Thief is the simplest.'],[5,'Uncanny dodge','Reaction: halve the damage from an attack you can see.']]},
+ wizard:{name:'Wizard',blurb:'A scholar of the arcane. Fragile, clever and capable of astonishing magic.',tags:'Magic · Clever · Fragile',die:6,saves:['int','wis'],pick:2,from:['Arcana','History','Insight','Investigation','Medicine','Religion'],
+  arr:{int:15,con:14,dex:13,wis:12,cha:10,str:8},ac:m=>10+m.dex,acText:'No armour (10 + DEX). Mage Armor makes it 13 + DEX.',
+  attacks:[{n:'Dagger',ab:'dex',d:'1d4',t:'piercing'},{n:'Quarterstaff',ab:'str',d:'1d6',t:'bludgeoning'}],
+  gear:['Quarterstaff','Dagger','Spellbook','Component pouch','Scholar’s pack'],
+  res:[{key:'recov',label:'Arcane Recovery',max:()=>1,rest:'long',help:'Once a day on a short rest, regain spell slots worth half your level (rounded up).'}],
+  cast:{ab:'int',full:1,cantrips:3,spells:4,cl:['Fire Bolt','Ray of Frost','Shocking Grasp','Mage Hand','Light','Minor Illusion','Prestidigitation'],sl:['Magic Missile','Shield','Sleep','Mage Armor','Burning Hands','Thunderwave','Detect Magic','Feather Fall','Charm Person']},
+  features:[[1,'Spellcasting','Intelligence-based. You prepare spells from your spellbook.'],[1,'Arcane recovery','Once a day on a short rest, regain some spell slots.'],[2,'Arcane tradition','Choose a school with the DM (Evocation is the simplest).'],[5,'Third-level spells','Fireball becomes possible.']]}
+};
+const SLOTS_FULL={1:[2],2:[3],3:[4,2],4:[4,3],5:[4,3,2]};
+const SLOTS_HALF={1:[],2:[2],3:[3],4:[3],5:[4,2]};
+const XP=[0,300,900,2700,6500];
+
+const BG={
+ acolyte:{name:'Acolyte',blurb:'Raised in service to a temple.',skills:['Insight','Religion'],gear:['Holy symbol','Prayer book','Incense (5 sticks)','Common clothes'],gold:15,feat:'Shelter of the faithful: temples of your faith will help you.'},
+ criminal:{name:'Criminal',blurb:'You know how the underworld works.',skills:['Deception','Stealth'],gear:['Crowbar','Dark hooded clothes'],gold:15,feat:'Criminal contact: someone who passes messages through the underworld.'},
+ entertainer:{name:'Entertainer',blurb:'You lived for the crowd.',skills:['Acrobatics','Performance'],gear:['Musical instrument','Admirer’s favour','Costume'],gold:15,feat:'By popular demand: you can always find a place to perform for food and a bed.'},
+ folkhero:{name:'Folk Hero',blurb:'Ordinary people already tell stories about you.',skills:['Animal Handling','Survival'],gear:['Artisan’s tools','Shovel','Iron pot','Common clothes'],gold:10,feat:'Rustic hospitality: common folk will shelter you.'},
+ artisan:{name:'Guild Artisan',blurb:'A trained maker with guild connections.',skills:['Insight','Persuasion'],gear:['Artisan’s tools','Letter from your guild','Traveller’s clothes'],gold:15,feat:'Guild membership: your guild will feed and house you.'},
+ noble:{name:'Noble',blurb:'Born to privilege, with a name that opens doors.',skills:['History','Persuasion'],gear:['Fine clothes','Signet ring','Scroll of pedigree'],gold:25,feat:'Position of privilege: high society welcomes you.'},
+ outlander:{name:'Outlander',blurb:'Grew up far from towns and roads.',skills:['Athletics','Survival'],gear:['Staff','Hunting trap','Animal trophy','Traveller’s clothes'],gold:10,feat:'Wanderer: you always find food and water for the party in the wild.'},
+ sage:{name:'Sage',blurb:'Years among books and scholars.',skills:['Arcana','History'],gear:['Ink and quill','Small knife','Letter with an unanswered question','Common clothes'],gold:10,feat:'Researcher: you know where to find the answer.'},
+ soldier:{name:'Soldier',blurb:'You served in a war, and it left its mark.',skills:['Athletics','Intimidation'],gear:['Insignia of rank','Trophy from a fallen enemy','Deck of cards','Common clothes'],gold:10,feat:'Military rank: soldiers still defer to you.'},
+ urchin:{name:'Urchin',blurb:'You survived the streets on your own wits.',skills:['Sleight of Hand','Stealth'],gear:['Small knife','City map','Pet mouse','Token from your parents'],gold:10,feat:'City secrets: you move through a city twice as fast.'}
+};
+
+const CONDS={'Blinded':'Fails sight checks. Attacks against it have advantage; its attacks have disadvantage.','Charmed':'Cannot attack the charmer, who has advantage on social checks.','Deafened':'Cannot hear.','Frightened':'Disadvantage while it can see the source; cannot move closer.','Grappled':'Speed 0.','Incapacitated':'No actions or reactions.','Invisible':'Attacks against it have disadvantage; its attacks have advantage.','Paralysed':'Incapacitated, cannot move, fails STR and DEX saves. Hits from within 5 ft are crits.','Poisoned':'Disadvantage on attacks and ability checks.','Prone':'Must crawl. Melee attacks against it have advantage, ranged have disadvantage.','Restrained':'Speed 0, disadvantage on attacks and DEX saves; attacks against it have advantage.','Stunned':'Incapacitated, fails STR and DEX saves; attacks against it have advantage.','Unconscious':'Drops everything, falls prone. Hits from within 5 ft are crits.','Exhausted':'Disadvantage on ability checks (worse at higher levels).','Raging':'Barbarian rage is active.','Concentrating':'Keeping a spell going. Taking damage means a CON save (DC 10 or half the damage).','Blessed':'Add 1d4 to attacks and saves.','Hidden':'Unseen. First attack has advantage.'};
+
+const MON={
+ goblin:{name:'Goblin',ac:15,hp:7,mod:2,atk:[{n:'Scimitar',hit:4,d:'1d6+2'},{n:'Shortbow',hit:4,d:'1d6+2'}],note:'Nimble escape: Disengage or Hide as a bonus action.'},
+ kobold:{name:'Kobold',ac:12,hp:5,mod:2,atk:[{n:'Dagger',hit:4,d:'1d4+2'},{n:'Sling',hit:4,d:'1d4+2'}],note:'Pack tactics: advantage if an ally is next to the target.'},
+ rat:{name:'Giant rat',ac:12,hp:7,mod:2,atk:[{n:'Bite',hit:4,d:'1d4+2'}],note:'Pack tactics.'},
+ wolf:{name:'Wolf',ac:13,hp:11,mod:2,atk:[{n:'Bite',hit:4,d:'2d4+2'}],note:'On a hit: STR save DC 11 or knocked prone. Pack tactics.'},
+ bandit:{name:'Bandit',ac:12,hp:11,mod:1,atk:[{n:'Scimitar',hit:3,d:'1d6+1'},{n:'Light crossbow',hit:3,d:'1d8+1'}],note:''},
+ cultist:{name:'Cultist',ac:12,hp:9,mod:1,atk:[{n:'Scimitar',hit:3,d:'1d6+1'}],note:'Advantage on saves against being charmed or frightened.'},
+ skeleton:{name:'Skeleton',ac:13,hp:13,mod:2,atk:[{n:'Shortsword',hit:4,d:'1d6+2'},{n:'Shortbow',hit:4,d:'1d6+2'}],note:'Vulnerable to bludgeoning.'},
+ zombie:{name:'Zombie',ac:8,hp:22,mod:-2,atk:[{n:'Slam',hit:3,d:'1d6+1'}],note:'Undead fortitude: at 0 HP, CON save (5 + damage) to drop to 1 instead.'},
+ orc:{name:'Orc',ac:13,hp:15,mod:1,atk:[{n:'Greataxe',hit:5,d:'1d12+3'},{n:'Javelin',hit:5,d:'1d6+3'}],note:'Aggressive: bonus action to move toward an enemy.'},
+ bugbear:{name:'Bugbear',ac:16,hp:27,mod:2,atk:[{n:'Morningstar',hit:4,d:'2d8+2'}],note:'Surprise attack: +2d6 if the target is surprised.'},
+ ogre:{name:'Ogre',ac:11,hp:59,mod:-1,atk:[{n:'Greatclub',hit:6,d:'2d8+4'}],note:'A boss for a level 1 to 2 party.'},
+ captain:{name:'Bandit captain',ac:15,hp:65,mod:3,atk:[{n:'Scimitar',hit:5,d:'1d6+3'},{n:'Dagger',hit:5,d:'1d4+3'}],note:'Multiattack: three attacks. Parry: +2 AC as a reaction.'}
+};
+
+const LIKES=['Big fights','Talking my way through','Exploring strange places','Puzzles and mysteries','Sneaking and heists','Funny moments','Drama and big choices','Finding loot'];
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sg=n=>(n>=0?'+':'−')+Math.abs(n);
+const kmod=n=>n?(n>0?'+'+n:'-'+Math.abs(n)):'';
+const md=s=>Math.floor((s-10)/2);
+const uid=()=>'x'+Math.random().toString(36).slice(2,10);
+const clone=o=>JSON.parse(JSON.stringify(o||{}));
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function merge(t,s){for(const k in s){const v=s[k];if(v&&typeof v==='object'&&!Array.isArray(v)){if(!t[k]||typeof t[k]!=='object'||Array.isArray(t[k]))t[k]={};merge(t[k],v)}else t[k]=v}return t}
+
+/* house voice: sly, grown-up, never cruel */
+Object.assign(ANC.human,{blurb:'Short-lived, ambitious and willing to try anything once. Usually twice.'});
+Object.assign(ANC.elf,{blurb:'Graceful, ageless and insufferably smug about it. Has been “resting their eyes” since last century.'});
+Object.assign(ANC.dwarf,{blurb:'Short, sturdy and impossible to drink under the table. Holds grudges longer than beards.'});
+Object.assign(ANC.halfling,{blurb:'Small, cheerful and improbably lucky, in every sense. Second breakfast is not negotiable.'});
+Object.assign(ANC.gnome,{blurb:'A tiny tinkerer with big ideas and no volume control. Everything they build explodes eventually.'});
+Object.assign(ANC.halforc,{blurb:'Big, loud and harder to put down than a third pint. Their parents’ love story is best not discussed.'});
+Object.assign(ANC.tiefling,{blurb:'Horns, a tail and a silver tongue. People stare, and they are usually right to.'});
+Object.assign(ANC.dragonborn,{blurb:'A walking dragon with a fiery temper and fierier breath. Do not stand downwind after dinner.'});
+Object.assign(CLS.barbarian,{blurb:'Solves problems by hitting them. Fights shirtless for reasons that are definitely tactical.'});
+Object.assign(CLS.bard,{blurb:'Charms monsters, villains and barmaids alike. Has slept in more beds than the party has slept in inns.'});
+Object.assign(CLS.cleric,{blurb:'Holy, heavily armoured and the reason everyone is still alive. Prays every morning, sins every evening.'});
+Object.assign(CLS.fighter,{blurb:'Trained, armoured and gloriously uncomplicated. Point them at the problem and stand well back.'});
+Object.assign(CLS.paladin,{blurb:'Swore a sacred oath and will not stop mentioning it. Very firm morals, until roughly the third drink.'});
+Object.assign(CLS.ranger,{blurb:'Lives in the woods, talks to animals, avoids people. Deadly with a bow, hopeless at parties.'});
+Object.assign(CLS.rogue,{blurb:'Sneaky, skilful and devastating when you are not looking. Check your purse. Go on.'});
+Object.assign(CLS.wizard,{blurb:'Spent their youth reading instead of living. Now making up for it with fireballs.'});
+Object.assign(BG.acolyte,{blurb:'Raised in a temple. Knows every prayer and most of the sins.'});
+Object.assign(BG.criminal,{blurb:'Retired from crime. Mostly. Allegedly.'});
+Object.assign(BG.entertainer,{blurb:'Lived for the applause, and the after-parties.'});
+Object.assign(BG.folkhero,{blurb:'Saved a village once and has been dining out on it ever since.'});
+Object.assign(BG.artisan,{blurb:'A respectable craftsperson with a suspiciously well-connected guild.'});
+Object.assign(BG.noble,{blurb:'Born rich, then something went wrong. Still expects someone else to carry the bags.'});
+Object.assign(BG.outlander,{blurb:'Grew up far from towns, roads and soap.'});
+Object.assign(BG.sage,{blurb:'Years among books. Can explain anything, slowly, at great length.'});
+Object.assign(BG.soldier,{blurb:'Survived a war. Still up at dawn, still swears like a sergeant.'});
+Object.assign(BG.urchin,{blurb:'Raised by the streets. Can open any lock, and most purses.'});
+LIKES.length=0;LIKES.push('Big fights','Talking my way out of it','Flirting with the locals','Exploring strange places','Puzzles and mysteries','Sneaking and stealing','Bar fights and bad jokes','Drama and big choices','Loot, glorious loot');
+/* ---------- derived character ---------- */
+function derive(c){
+  const A=ANC[c.ancestry]||ANC.human,K=CLS[c.cls]||CLS.fighter,B=BG[c.background]||{skills:[]};
+  const lvl=Math.min(5,Math.max(1,c.level||1)),prof=lvl>=5?3:2;
+  const sc={},m={};
+  AB.forEach(a=>{sc[a]=((c.base&&c.base[a])||10)+(A.bonus[a]||0)+((c.boost&&c.boost[a])||0);m[a]=md(sc[a])});
+  const ps=new Set([...(B.skills||[]),...(A.skills||[]),...(c.skills||[])]);
+  const skills=Object.entries(SK).map(([s,a])=>({s,a,p:ps.has(s),v:m[a]+(ps.has(s)?prof:0)}));
+  const saves={};AB.forEach(a=>{const p=K.saves.includes(a);saves[a]={p,v:m[a]+(p?prof:0)}});
+  const avg=K.die/2+1;
+  const hpMax=Math.max(1,K.die+m.con+(lvl-1)*(avg+m.con)+(c.ancestry==='dwarf'?lvl:0)+(+c.hpBonus||0));
+  const ac=K.ac(m)+(+c.acBonus||0);
+  const attacks=K.attacks.map(w=>({n:w.n,hit:m[w.ab]+prof,d:w.d+kmod(m[w.ab]),t:w.t}));
+  if(c.cls==='rogue')attacks.push({n:'Sneak attack (extra)',hit:null,d:Math.ceil(lvl/2)+'d6',t:'added once per turn'});
+  let cast=null;
+  if(K.cast){const cm=m[K.cast.ab];const slots=(K.cast.full?SLOTS_FULL:SLOTS_HALF)[lvl]||[];
+    cast={ab:K.cast.ab,mod:cm,dc:8+prof+cm,atk:prof+cm,slots,cantrips:[...new Set([...(c.ancestry==='tiefling'?['Thaumaturgy']:[]),...(c.cantrips||[])])],spells:[...(K.cast.always||[]),...(c.spells||[])]}}
+  else if(c.ancestry==='tiefling'){cast={ab:'cha',mod:m.cha,dc:8+prof+m.cha,atk:prof+m.cha,slots:[],cantrips:['Thaumaturgy'],spells:[]}}
+  const res=[...(K.res||[]),...(A.res||[])].map(r=>({...r,max:r.max(lvl,m)})).filter(r=>r.max>0);
+  const feats=[...K.features.filter(f=>f[0]<=lvl).map(f=>[f[1],f[2]]),...A.traits];
+  if(B.feat)feats.push([B.name+' background',B.feat]);
+  const pp=10+skills.find(x=>x.s==='Perception').v;
+  const breathDC=8+m.con+prof;
+  return {A,K,B,lvl,prof,sc,m,skills,saves,hpMax,ac,init:m.dex,speed:A.speed,attacks,cast,res,feats,pp,breathDC};
+}
+function hpState(hp,max){if(hp<=0)return['Down','down'];const r=hp/max;if(r<=.5)return['Bloodied','low'];if(r<1)return['Hurt','mid'];return['Unhurt','']}
+
+/* ---------- backend: Supabase RPCs, or this device in demo mode ---------- */
+const CFG=window.WT_CONFIG||{};
+const LIVE=!!(CFG.url&&CFG.key&&!CFG.url.startsWith('%%'));
+async function rpc(fn,args){
+  const r=await fetch(CFG.url.replace(/\/$/,'')+'/rest/v1/rpc/'+fn,{method:'POST',headers:Object.assign({'apikey':CFG.key,'Content-Type':'application/json'},CFG.key.startsWith('sb_')?{}:{'Authorization':'Bearer '+CFG.key}),body:JSON.stringify(args||{})});
+  const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){}
+  if(!r.ok){const m=(j&&(j.message||j.hint))||('HTTP '+r.status);const e=new Error(m);e.status=r.status;throw e}
+  return j;
+}
+const demo={
+  load(){return lsGet('wt2.demo',{players:[]})},save(s){lsSet('wt2.demo',s)},
+};
+const API={
+  async me(token){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);return p?{id:p.token,label:p.label,data:p.data||null}:null}
+    return rpc('wt_get_my_character',{p_token:token})},
+  async saveMine(token,data,secret){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);if(!p)throw new Error('Unknown link');p.data=data;p.secret=secret;p.updated=new Date().toISOString();demo.save(s);return true}
+    return rpc('wt_save_my_character',{p_token:token,p_data:data,p_secret:secret||''})},
+  async dmList(pass){if(!LIVE){if(pass!==lsGet('wt2.demopass','dm'))throw Object.assign(new Error('bad'),{status:401});return demo.load().players.map(p=>({id:p.token,label:p.label,token:p.token,data:p.data||null,secret:p.secret||'',updated_at:p.updated||null}))}
+    return rpc('wt_dm_list',{p_pass:pass})},
+  async dmAdd(pass,label){if(!LIVE){const s=demo.load();const token=Math.random().toString(36).slice(2,12);s.players.push({token,label});demo.save(s);return token}
+    return rpc('wt_dm_add_player',{p_pass:pass,p_label:label})},
+  async dmRemove(pass,id){if(!LIVE){const s=demo.load();s.players=s.players.filter(p=>p.token!==id);demo.save(s);return true}
+    return rpc('wt_dm_remove_player',{p_pass:pass,p_id:id})},
+  async artIndex(ids){if(!LIVE){const a=lsGet('wt2.art',{});return ids.filter(i=>a[i]&&a[i].shown).map(i=>({id:i,v:a[i].v}))}return rpc('wt_art_index',{p_ids:ids})},
+  async artGet(ids,pass){if(!LIVE){const a=lsGet('wt2.art',{});return ids.filter(i=>a[i]&&(a[i].shown||pass)).map(i=>({id:i,data:a[i].data,v:a[i].v}))}return rpc('wt_art_get',pass?{p_ids:ids,p_pass:pass}:{p_ids:ids})},
+  async dmArtList(pass){if(!LIVE){const a=lsGet('wt2.art',{});return Object.entries(a).map(([id,o])=>({id,shown:o.shown,v:o.v}))}return rpc('wt_dm_art_list',{p_pass:pass})},
+  async dmArtPut(pass,id,data,shown){if(!LIVE){const a=lsGet('wt2.art',{});a[id]={data,shown:a[id]?a[id].shown:shown,v:String(Date.now())};lsSet('wt2.art',a);return true}return rpc('wt_dm_art_put',{p_pass:pass,p_id:id,p_data:data,p_shown:shown})},
+  async dmArtShow(pass,id,shown){if(!LIVE){const a=lsGet('wt2.art',{});if(a[id]){a[id].shown=shown;a[id].v=String(Date.now())}lsSet('wt2.art',a);return true}return rpc('wt_dm_art_show',{p_pass:pass,p_id:id,p_shown:shown})},
+  async dmArtDel(pass,id){if(!LIVE){const a=lsGet('wt2.art',{});delete a[id];lsSet('wt2.art',a);return true}return rpc('wt_dm_art_del',{p_pass:pass,p_id:id})},
+  async tableGet(){if(!LIVE)return{pub:lsGet('wt2.pub',{})};return rpc('wt_table_get')},
+  async dmTableGet(pass){if(!LIVE)return{dm:lsGet('wt2.dmt',null),pub:lsGet('wt2.pub',{})};return rpc('wt_dm_table_get',{p_pass:pass})},
+  async dmTableSet(pass,dm,pub){if(!LIVE){lsSet('wt2.dmt',dm);lsSet('wt2.pub',pub);return true}return rpc('wt_dm_table_set',{p_pass:pass,p_dm:dm,p_pub:pub})},
+  async dmSave(pass,id,data){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);p.data=data;demo.save(s);return true}
+    return rpc('wt_dm_save_character',{p_pass:pass,p_id:id,p_data:data})}
+};
+
+/* ---------- state ---------- */
+const qs=new URLSearchParams(location.search);
+const S={art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',dtab:'players',pub:{},pubSig:'',seen:new Set(),dmt:{scene:{title:'',text:''},monsters:[],log:[]},
+  token:qs.get('p')||lsGet('wt2.token',null),dmMode:qs.has('dm'),pass:lsGet('wt2.pass',null),
+  me:null,players:[],tab:null,open:null,draft:null,step:0,swap:null,armed:null,err:null,loaded:false,editing:false};
+if(qs.get('p'))lsSet('wt2.token',qs.get('p'));
+function blankDraft(){return{name:'',ancestry:null,cls:null,background:null,base:{str:10,dex:10,con:10,int:10,wis:10,cha:10},skills:[],cantrips:[],spells:[],look:'',personality:'',drive:'',tie:'',never:'',secret:'',likes:[]}}
+function draftKey(){return'wt2.draft.'+(S.token||'x')}
+S.draft=lsGet(draftKey(),null)||blankDraft();
+function saveDraft(){lsSet(draftKey(),S.draft)}
+
+/* ---------- toast ---------- */
+let tt;function toast(html,ms){const t=$('#toast');t.innerHTML=html;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,ms||4200)}
+
+/* ---------- reference sheet (no dice: players roll real ones) ---------- */
+function sheetHTML(c,opts){
+  opts=opts||{};const x=derive(c);
+  const ab=AB.map(a=>`<div class="ab"><div class="k">${ABS[a]}</div><div class="m">${sg(x.m[a])}</div><div class="s">${x.sc[a]}</div><span class="sv ${x.saves[a].p?'p':''}">save ${sg(x.saves[a].v)}</span></div>`).join('');
+  const sk=x.skills.map(s=>`<div class="li"><span><span class="dot ${s.p?'p':''}"></span>${esc(s.s)} <span class="muted" style="font-size:.78rem">${ABS[s.a]}</span></span><span class="num">${sg(s.v)}</span></div>`).join('');
+  const at=x.attacks.map(w=>`<div class="li"><span><b>${esc(w.n)}</b> <span class="muted">${esc(w.t)}</span></span><span class="num">${w.hit==null?'':sg(w.hit)+' to hit · '}${esc(w.d)}</span></div>`).join('');
+  let spells='';
+  if(x.cast){const sp=n=>{const s=SPELLS[n]||{t:''};const dm=String(s.d||'').replace('M',x.cast.mod>=0?x.cast.mod:'-'+Math.abs(x.cast.mod)).replace('+-','-');
+      return`<div class="li"><span style="min-width:0"><b>${esc(n.replace(' (Ranger)',''))}</b>${s.save?` <span class="chip">${ABS[s.save]} save DC ${x.cast.dc}</span>`:''}${s.atk?` <span class="chip">${sg(x.cast.atk)} to hit</span>`:''}<br><span class="muted" style="font-size:.88rem">${esc(s.t)}</span></span>${dm?`<span class="num">${esc(dm)}</span>`:''}</div>`};
+    spells=`<div class="panel"><div class="row" style="justify-content:space-between"><h3>Spells</h3><span class="sub">${ABN[x.cast.ab]} · save DC <b class="num">${x.cast.dc}</b> · spell attack <b class="num">${sg(x.cast.atk)}</b></span></div>
+     ${x.cast.slots.length?`<p class="sub" style="margin:4px 0">Spell slots per long rest: ${x.cast.slots.map((n,i)=>n+' of level '+(i+1)).join(', ')}.</p>`:(x.K.cast&&!x.K.cast.full?'<p class="sub">Spells arrive at level 2.</p>':'')}
+     ${x.cast.cantrips.length?'<div class="eyebrow" style="margin-top:8px">Cantrips (free, at will)</div><div class="list">'+x.cast.cantrips.map(sp).join('')+'</div>':''}
+     ${x.cast.spells.length?'<div class="eyebrow" style="margin-top:8px">Spells (use a slot)</div><div class="list">'+x.cast.spells.map(sp).join('')+'</div>':''}</div>`}
+  const res=x.res.length?`<div class="panel"><h3>Once-per-rest powers</h3>${x.res.map(r=>`<p style="margin:8px 0 0"><b>${esc(r.label)}</b> <span class="muted">×${r.max}, back after a ${r.rest} rest.</span><br><span class="muted" style="font-size:.9rem">${esc(r.help)}${r.key==='breath'?' DC '+x.breathDC+'.':''}</span></p>`).join('')}</div>`:'';
+  const B=BG[c.background]||{gear:[],gold:0};const items={};[...x.K.gear,...(B.gear||[])].forEach(n=>items[n]=(items[n]||0)+1);
+  const inv=Object.entries(items).map(([n,q])=>`<div class="it"><span>${esc(n)}</span><span class="num">${q>1?'×'+q:''}</span></div>`).join('');
+  const story=[['look','Look'],['personality','Personality'],['drive','What drives them'],['tie','Tie to the party'],['never','Would never']].filter(([k])=>c[k]).map(([k,l])=>`<dt>${l}</dt><dd>${esc(c[k])}</dd>`).join('');
+  return`<div class="sheet">
+   <div><h2>${esc(c.name||'Unnamed')}</h2><div class="sub">Level ${x.lvl} ${esc(x.A.name)} ${esc(x.K.name)} · ${esc(x.B.name||'')}${opts.by?' · played by '+esc(opts.by):''}</div></div>
+   <p class="tip">Real dice only. Roll a d20 for checks, saves and attacks (the listed dice for damage), add the number shown here, and announce the total with confidence.</p>
+   <div class="panel"><div class="stats"><div class="stat"><b>${x.hpMax}</b><span>Hit points</span></div><div class="stat"><b>${x.ac}</b><span>AC</span></div><div class="stat"><b>${sg(x.init)}</b><span>Initiative</span></div><div class="stat"><b>${x.speed}</b><span>Speed</span></div><div class="stat"><b>+${x.prof}</b><span>Prof</span></div></div>
+     <div class="sub" style="margin-top:8px">${esc(x.K.acText)} · Passive Perception ${x.pp} · hit die d${x.K.die}</div></div>
+   <div><div class="eyebrow" style="margin-bottom:6px">Abilities and saving throws</div><div class="abil">${ab}</div></div>
+   <div class="sgrid">
+     <div style="display:grid;gap:14px;align-content:start">
+       <div class="panel"><h3>Attacks</h3><div class="list">${at}</div></div>
+       ${spells}${res}
+       <div class="panel feat"><h3>Features and traits</h3>${x.feats.map(f=>`<details><summary>${esc(f[0])}</summary><p>${esc(f[1])}</p></details>`).join('')}</div>
+     </div>
+     <div style="display:grid;gap:14px;align-content:start">
+       <div class="panel"><h3>Skills</h3><div class="skills">${sk}</div></div>
+       <div class="panel"><div class="row" style="justify-content:space-between"><h3>Starting gear</h3><span class="sub">${B.gold||0} gold</span></div><div class="inv" style="margin-top:6px">${inv}</div></div>
+       ${story||opts.secret?`<div class="panel"><h3>Story</h3><dl class="k2">${story}</dl>${opts.secret?`<p class="secret"><span class="eyebrow">Secret, only the DM sees this</span><br>${esc(opts.secret)}</p>`:''}${c.likes&&c.likes.length?`<p class="sub">Enjoys: ${esc(c.likes.join(', '))}</p>`:''}</div>`:''}
+     </div>
+   </div></div>`;
+}
+
+/* ---------- builder ---------- */
+const STEPS=[['who','Name'],['anc','Ancestry'],['cls','Class'],['abil','Abilities'],['skills','Skills'],['spells','Spells'],['story','Story'],['done','Review']];
+function steps(){const k=CLS[S.draft.cls];return STEPS.filter(s=>s[0]!=='spells'||(k&&k.cast&&(k.cast.cantrips||k.cast.spells)))}
+function stepOk(key){const D=S.draft;const K=CLS[D.cls];
+  if(key==='who')return!!D.name.trim();if(key==='anc')return!!D.ancestry;if(key==='cls')return!!D.cls;
+  if(key==='skills')return!!D.background&&D.skills.length===K.pick;
+  if(key==='spells')return D.cantrips.length===K.cast.cantrips&&D.spells.length===K.cast.spells;return true}
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+const SIG={fighter:'sword',rogue:'dagger',wizard:'star',barbarian:'axe',bard:'lute',cleric:'sun',paladin:'shield',ranger:'bow'};
+function tarot(field,entries,sel,meta){
+  const cur=entries.find(e=>e[0]===sel);
+  const desc=cur?`<div class="tdesc"><h3 style="font-size:1.15rem">${esc(cur[1].name)}</h3><p>${esc(cur[1].blurb)}</p><span class="tags">${esc(meta(cur[1]))}</span></div>`:'<div class="tdesc"><p>Tap a card to turn it over.</p></div>';
+  return `<div class="deck">${entries.map(([k,o],i)=>`<button class="tcard" data-act="pick" data-f="${field}" data-v="${k}" aria-pressed="${sel===k}"><span class="tn">${ROMAN[i]}</span>${field==='cls'?`<svg class="sig"><use href="#s-${SIG[k]}"/></svg>`:`<span class="glyph">${esc(o.name[0])}</span>`}<b>${esc(o.name)}</b></button>`).join('')}</div>`+desc;
+}
+function abHelp(a){return{str:'lifting, hitting, opening stubborn jars',dex:'reflexes, aim, sneaking out before breakfast',con:'toughness, hit points, hangover recovery',int:'memory, reasoning, wizard magic',wis:'gut feeling, cleric magic, knowing when to leave',cha:'charm, presence, free drinks, bard magic'}[a]}
+function draftToChar(){const D=S.draft;return{name:D.name.trim(),ancestry:D.ancestry,cls:D.cls,background:D.background,base:{...D.base},skills:[...D.skills],cantrips:[...D.cantrips],spells:[...D.spells],look:D.look,personality:D.personality,drive:D.drive,tie:D.tie,never:D.never,likes:[...D.likes],level:1}}
+function charToDraft(c,secret){return{...blankDraft(),...clone(c),secret:secret||''}}
+function viewBuild(){
+  const st=steps();if(S.step>=st.length)S.step=st.length-1;const [key]=st[S.step];const D=S.draft;
+  const head=`<div style="display:grid;gap:10px"><span class="eyebrow">${ROMAN[S.step]} · ${st[S.step][1]}</span><div class="steps">${st.map((s,i)=>`<span class="${i===S.step?'now':i<S.step?'done':''}">${s[1]}</span>`).join('')}</div></div>`;
+  let body='';
+  if(key==='who')body=`<h2 style="font-size:1.8rem">Who are you playing?</h2><p class="muted" style="margin:0">Pick a name that sounds good shouted across a tavern, ideally by someone you owe money. You can change anything until the first session.</p>
+    <label class="f">Character name<input type="text" id="b-name" data-draft="name" value="${esc(D.name)}" placeholder="Brannoc Ashfall" autocomplete="off"></label>`;
+  if(key==='anc')body=`<h2 style="font-size:1.8rem">Draw your people</h2><p class="muted" style="margin:0">Your people. It shapes your body, your senses and what your mother says about you at weddings.</p>${tarot('ancestry',Object.entries(ANC),D.ancestry,a=>Object.entries(a.bonus).map(([b,v])=>ABS[b]+' +'+v).join(' · ')+(a.speed<30?' · speed '+a.speed:''))}`;
+  if(key==='cls')body=`<h2 style="font-size:1.8rem">Draw your calling</h2><p class="muted" style="margin:0">What you do when things go wrong, which they will. New to this? Fighter and Barbarian are the simplest; Cleric and Bard keep everyone alive.</p>${tarot('cls',Object.entries(CLS),D.cls,c=>c.tags)}`;
+  if(key==='abil'){const A=ANC[D.ancestry];
+    body=`<h2 style="font-size:1.8rem">Set your abilities</h2><p class="muted" style="margin:0">We put your best numbers where a ${CLS[D.cls].name} needs them. Tap one ability and then another to swap them. Nobody is good at everything, especially at our age.</p>
+    <div class="arr">${AB.map(a=>{const b=D.base[a],bon=A.bonus[a]||0,t=b+bon;return`<button data-act="swap" data-a="${a}" class="${S.swap===a?'sel':''}"><span><b>${ABN[a]}</b><br><span class="sub">${esc(abHelp(a))}</span></span><span class="num muted">${b}${bon?' +'+bon:''}</span><span class="tot">${t}</span><span class="num" style="min-width:3ch;text-align:right">${sg(md(t))}</span></button>`}).join('')}</div>
+    <div><button class="btn sm" data-act="recommend">Use the recommended spread</button></div>`}
+  if(key==='skills'){const K=CLS[D.cls];const B=BG[D.background];const fixed=new Set([...(B?B.skills:[]),...(ANC[D.ancestry].skills||[])]);
+    body=`<h2 style="font-size:1.8rem">Background and skills</h2><p class="muted" style="margin:0">Your life before the guild took you in. It comes with two skills, some gear and at least one regret.</p>
+    ${tarot('background',Object.entries(BG),D.background,b=>b.skills.join(' · '))}
+    ${B?`<h3 style="font-size:1.35rem;margin-top:6px">Pick ${K.pick} class skills <span class="sub">(${D.skills.length} of ${K.pick})</span></h3>
+    <div class="choices">${K.from.map(s=>{const on=D.skills.includes(s),fx=fixed.has(s);return`<button class="choice" data-act="skill" data-v="${esc(s)}" aria-pressed="${on||fx}" ${fx||(!on&&D.skills.length>=K.pick)?'disabled':''}><h3 style="font-size:1.1rem">${esc(s)}</h3><p>${esc(SKILLHELP[s])}${fx?' · already yours':''}</p></button>`}).join('')}</div>`:''}`}
+  if(key==='spells'){const C=CLS[D.cls].cast;
+    const grid=(list,f,n)=>`<div class="choices">${list.map(s=>{const on=D[f].includes(s);return`<button class="choice" data-act="spell" data-f="${f}" data-v="${esc(s)}" aria-pressed="${on}" ${!on&&D[f].length>=n?'disabled':''}><h3 style="font-size:1.1rem">${esc(s)}</h3><p>${esc(SPELLS[s].t)}</p></button>`}).join('')}</div>`;
+    body=`<h2 style="font-size:1.8rem">Choose your magic</h2>${C.always?`<p class="muted" style="margin:0">You always have ${C.always.join(' and ')}.</p>`:''}
+    <h3 style="font-size:1.35rem">Cantrips, free to cast all day, like compliments <span class="sub">(${D.cantrips.length} of ${C.cantrips})</span></h3>${grid(C.cl,'cantrips',C.cantrips)}
+    <h3 style="font-size:1.35rem">Level 1 spells <span class="sub">(${D.spells.length} of ${C.spells})</span></h3>${grid(C.sl,'spells',C.spells)}`}
+  if(key==='story')body=`<h2 style="font-size:1.8rem">Their story</h2><p class="muted" style="margin:0">A sentence each is plenty. The DM will use every word of it against you.</p>
+    ${[['look','What do people notice first?','A scar they say came from a dragon (it was a goat)'],['personality','How do they act around others?','Flirts when nervous, which is always'],['drive','What do they want more than anything?','To win back the tavern they lost in a card game'],['tie','How do they know someone else in the party?','Woke up next to another party member once. Nobody talks about it.'],['never','One thing they would never do','Pay full price']].map(([k,l,p])=>`<label class="f">${l}<input type="text" id="b-${k}" data-draft="${k}" value="${esc(D[k])}" placeholder="${esc(p)}"></label>`).join('')}
+    <label class="f">A secret only the DM sees <span class="h">Optional. The rest of the party never sees this.</span><textarea id="b-secret" data-draft="secret" placeholder="Still married. Technically.">${esc(D.secret)}</textarea></label>
+    <div class="f">What do you, the player, enjoy most at the table? <span class="h">Pick any.</span><div class="row">${LIKES.map(l=>`<button class="chip ${D.likes.includes(l)?'on':''}" data-act="like" data-v="${esc(l)}">${esc(l)}</button>`).join('')}</div></div>`;
+  if(key==='done')body=`<h2 style="font-size:1.8rem">The guild will see you now, ${esc(D.name)}.</h2>
+     <div class="row"><button class="btn pri" data-act="submit" id="submitbtn">${S.me&&S.me.data?'Save my changes':'Sign the guild ledger'}</button><button class="btn sm" data-act="restart">${S.armed==='restart'?'Tap again to start over':'Start over'}</button></div>
+     ${sheetHTML(draftToChar(),{secret:D.secret})}`;
+  const nav=key==='done'?`<div class="navbar"><button class="btn" data-act="back">Back</button><span></span></div>`:`<div class="navbar"><button class="btn" data-act="back" ${S.step===0?'disabled':''}>Back</button><button class="btn pri" data-act="next" ${stepOk(key)?'':'disabled'} id="nextbtn">Next: ${st[S.step+1][1]}</button></div>`;
+  return head+`<div style="display:grid;gap:14px">${body}</div>`+nav;
+}
+
+/* ---------- player views ---------- */
+/* ---------- the live table ---------- */
+const MOODS=[['','None'],['tavern','Candlelit tavern'],['rain','Rain'],['storm','Thunderstorm'],['cellar','Cobwebbed cellar'],['fog','Fog'],['snow','Snow'],['forest','Forest at night']];
+const STARTER_SCENES=[
+ {title:'The Guild of Second Chances, after closing time',text:'The fire is low, the ale is warm, and someone has carved a rude word into the notice board. The guildmaster slides a sealed letter across the bar. It smells of perfume and bad news.',mood:'tavern'},
+ {title:'The King’s Road, in the rain',text:'Mud to the ankles, rain down the collar, and a cart on its side ahead. Its driver is either dead or very committed to a nap.',mood:'rain'},
+ {title:'A cellar that should not be this big',text:'Barrels, cobwebs and a smell that has opinions. Somewhere below, something is humming a sea shanty, badly.',mood:'cellar'},
+ {title:'The Whispering Wood',text:'The trees lean in to listen. Little lights drift between them, and not all of them are fireflies.',mood:'forest'}];
+/* ---------- art ---------- */
+const ART_STYLE='Tarot card illustration, art nouveau line work, deep navy and antique gold palette, ornate gold frame with subtle Celtic knotwork in the corners, painterly, warm candlelight, witty and a little roguish, not photorealistic, no text or lettering, portrait orientation 2:3, 1024 x 1536 px';
+function pcPrompt(c){const x=derive(c);const B=BG[c.background]||{};const w=x.K.attacks[0].n.replace(/ \(.*\)/,'').toLowerCase();
+  return ART_STYLE+'. Subject: '+c.name+', a '+x.A.name.toLowerCase()+' '+x.K.name.toLowerCase()+', seasoned and well past thirty, once a '+(B.name||'wanderer').toLowerCase()+'. '+(c.look?'Notable: '+c.look+'. ':'')+(c.personality?'Attitude: '+c.personality+'. ':'')+'Carrying a '+w+'. Real-life likeness: [describe the player here: build, hair, face, signature style].'}
+function monPrompt(m){return ART_STYLE+'. A '+m.name.replace(/ \d+$/,'').toLowerCase()+', a menacing but slightly comic fantasy foe'+(m.desc?', '+m.desc:'')+'. Deep crimson accents.'}
+function monArtId(m){return'mon-'+(m.base||m.k)}
+async function compressImage(file){const bmp=await createImageBitmap(file);const s=Math.min(1,900/Math.max(bmp.width,bmp.height));const c=document.createElement('canvas');c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
+async function syncArt(ids,dm){ids=[...new Set(ids.filter(Boolean))];if(!ids.length)return false;
+  let idx;try{idx=dm?(await API.dmArtList(S.pass)).filter(a=>ids.includes(a.id)):await API.artIndex(ids)}catch(e){return false}
+  let changed=false;const live=new Set(idx.map(a=>a.id));
+  ids.forEach(i=>{if(!live.has(i)&&S.art[i]){delete S.art[i];changed=true}});
+  const need=idx.filter(a=>!S.art[i2(a)]||S.art[a.id].v!==a.v).map(a=>a.id);
+  function i2(a){return a.id}
+  for(let i=0;i<need.length;i+=6){try{const got=await API.artGet(need.slice(i,i+6),dm?S.pass:null);got.forEach(g=>{if(S.art[g.id]&&!dm)S.artNew.add(g.id);if(!S.art[g.id]&&!dm)S.artNew.add(g.id);S.art[g.id]={v:g.v,data:g.data};changed=true})}catch(e){}}
+  if(dm){idx.forEach(a=>{if(!S.artIdx[a.id]||S.artIdx[a.id].shown!==a.shown||S.artIdx[a.id].v!==a.v){S.artIdx[a.id]=a;changed=true}})}
+  return changed}
+function artImg(id,cls){const a=S.art[id];return a?`<img class="${cls||''}" src="${a.data}" alt="">`:''}
+function monStatus(m){if(m.hp<=0)return'Down';const r=m.hp/m.max;if(r<=.5)return'Bloodied';if(r<1)return'Hurt';return'Unhurt'}
+function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25)}}
+function viewTable(){
+  const P=S.pub||{};const fresh=[];
+  const mons=(P.monsters||[]).map(m=>{const n=!S.seen.has(m.k);if(n)fresh.push(m.k);const has=!!S.art[m.art];return`<div class="mon ${has?'has-art':''} ${m.status==='Down'?'down':''} ${n?'new':''}">${has?artImg(m.art,'art'):''}<span class="st" style="color:var(--blood)">${esc(m.status)}</span>${has?'<span></span>':`<span class="glyph">${esc((m.name||'?')[0])}</span>`}<b>${esc(m.name)}</b>${m.desc?`<p>${esc(m.desc)}</p>`:''}</div>`}).join('');
+  fresh.forEach(k=>S.seen.add(k));
+  const sc=P.scene?`<div class="panel scene"><span class="eyebrow">Now</span><h2>${esc(P.scene.title)}</h2>${P.scene.text?`<p>${esc(P.scene.text)}</p>`:''}</div>`:`<div class="empty"><h2>The lantern is not lit yet</h2><p>The DM is still scheming. Pour yourself a drink. When the scene is set it appears here, and monsters flip onto the table when they arrive.</p></div>`;
+  return sc+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
+}
+function viewRun(){
+  const d=S.dmt;const tv=location.origin+location.pathname+'?table';
+  const mons=(d.monsters||[]).map(m=>`<div class="panel dmon ${m.shown?'':'hidden'}"><div class="row" style="justify-content:space-between"><h3 style="font-size:1.15rem">${esc(m.name)}</h3><span class="chip ${m.shown?'on':''}">${m.shown?'On the table':'Hidden'}</span></div>
+    <div class="row"><b class="num" style="font-size:1.3rem">${m.hp}</b><span class="muted">/ ${m.max} HP · AC ${m.ac} · ${monStatus(m)}</span></div>
+    <div class="row">${[-5,-1,1].map(n=>`<button class="btn sm" data-act="mhp" data-k="${m.k}" data-d="${n}">${n>0?'+1':'−'+Math.abs(n)}</button>`).join('')}<input type="number" inputmode="numeric" id="mamt-${m.k}" placeholder="dmg" style="width:70px;min-height:32px" aria-label="Damage"><button class="btn sm warn" data-act="mdmg" data-k="${m.k}">Hit</button></div>
+    ${(m.atk||[]).length?`<div class="sub">${m.atk.map(a=>esc(a.n)+' '+sg(a.hit)+' to hit, '+esc(a.d)).join(' · ')}</div>`:''}${m.note?`<div class="sub">${esc(m.note)}</div>`:''}
+    <label class="f" style="font-weight:400">What the players see<input type="text" value="${esc(m.desc||'')}" data-mdesc="${m.k}" placeholder="Smells of wet dog and bad decisions"></label>
+    <div class="artrow">${S.art[monArtId(m)]?artImg(monArtId(m),'thumb'):''}<label class="btn sm">${S.art[monArtId(m)]?'Replace image':'Add image'}<input type="file" accept="image/*" data-art="${monArtId(m)}" data-shown="1"></label><button class="btn sm" data-act="prompt" data-mk="${m.k}">Copy image prompt</button></div>
+    <div class="row"><button class="btn sm ${m.shown?'':'pri'}" data-act="mshow" data-k="${m.k}">${m.shown?'Hide':'Reveal'}</button><button class="btn sm warn" data-act="mrm" data-k="${m.k}">Remove</button></div></div>`).join('');
+  return`<div class="sgrid"><div style="display:grid;gap:14px;align-content:start">
+   <div class="panel" style="display:grid;gap:10px"><h3>Set the scene</h3>
+    <label class="f">Where are we<input type="text" id="stitle" value="${esc(d.scene.title||'')}" placeholder="The Guild Hall, after closing time"></label>
+    <label class="f">What they see<textarea id="stext" rows="5" placeholder="The fire is low, the ale is warm, and someone has carved a rude word into the notice board.">${esc(d.scene.text||'')}</textarea></label>
+    <div class="f">Mood <span class="h">Plays softly on the table screen and the players’ phones.</span><div class="moods">${MOODS.map(([k,l])=>`<button class="chip ${(S.moodPick??d.scene.mood??'')===k?'on':''}" data-act="moodpick" data-v="${k}">${l}</button>`).join('')}</div></div>
+    <div class="row"><button class="btn pri" data-act="sceneset">Show to the table</button><button class="btn sm" data-act="scenesave">Save as a preset</button><button class="btn sm" data-act="sceneclear">Clear</button></div>
+    <div class="f">Preset scenes <span class="h">Tap to load one into the fields above, then show it.</span><div class="presets">${(d.presets||STARTER_SCENES).map((s,i)=>`<span class="chip">${MOODS.find(m=>m[0]===(s.mood||''))?'':''}<button class="btn sm" style="min-height:28px;border:0;background:none;padding:0 2px" data-act="preset" data-i="${i}">${esc(s.title)}</button><button class="btn sm" style="min-height:28px;border:0;background:none;padding:0 2px" data-act="presetdel" data-i="${i}" aria-label="Delete preset">×</button></span>`).join('')}</div></div></div>
+   <div class="panel" style="display:grid;gap:10px"><h3>The story so far</h3><div class="row"><input type="text" id="logtext" placeholder="The innkeeper owes you a favour" style="flex:1;min-width:160px"><button class="btn" data-act="logadd">Post</button></div>
+    <div class="log">${(d.log||[]).map((l,i)=>`<div class="row" style="justify-content:space-between"><span style="flex:1;min-width:0">${esc(l.text)}</span><button class="btn sm" data-act="logdel" data-i="${i}" aria-label="Remove">×</button></div>`).join('')}</div></div>
+   <div class="panel" style="display:grid;gap:6px"><h3>Table screen</h3><p class="sub" style="margin:0">Open this on a TV or a spare laptop. Players also see it under “The table” on their phones.</p><div class="link">${esc(tv)}</div><div><button class="btn sm" data-act="copy" data-url="${esc(tv)}">Copy link</button></div></div>
+  </div><div style="display:grid;gap:14px;align-content:start">
+   <div class="panel" style="display:grid;gap:10px"><h3>Bring in monsters</h3><p class="sub" style="margin:0">They arrive hidden. Tap Reveal at the dramatic moment and they flip onto everyone’s screen.</p>
+    <div class="row"><select id="mon" style="flex:1;min-width:170px" aria-label="Monster">${Object.entries(MON).map(([k,m])=>`<option value="${k}">${m.name} (AC ${m.ac}, ${m.hp} HP)</option>`).join('')}</select><input type="number" id="moncount" value="1" min="1" max="12" style="width:64px" aria-label="How many"><button class="btn" data-act="emon">Add</button></div>
+    <details><summary class="sub" style="cursor:pointer">Something else</summary><div class="row" style="margin-top:8px"><input type="text" id="cname" placeholder="Name" style="flex:2;min-width:140px"><input type="number" id="chp" placeholder="HP" style="width:76px"><input type="number" id="cac" placeholder="AC" style="width:76px"><button class="btn" data-act="ecustom">Add</button></div></details>
+    ${(d.monsters||[]).length?`<div class="row"><button class="btn sm" data-act="mrevealall">Reveal all</button><button class="btn sm" data-act="mcleardown">Clear the fallen</button></div>`:''}</div>
+   ${mons}
+  </div></div>`;
+}
+function viewPlayer(){
+  if(S.me&&S.me.data&&!S.editing&&S.ptab==='table')return viewTable();
+  if(!S.token)return`<div class="empty"><h2>Members only</h2><p>The DM sends each player their own link. Open that one and your character is saved to it.</p></div>`;
+  if(!S.loaded)return'<p class="banner">Loading your character…</p>';
+  if(!S.me)return`<div class="empty"><h2>The doorman does not recognise you</h2><p>Ask the DM for a fresh link.</p></div>`;
+  if(S.me.data&&!S.editing)return`<div class="row" style="justify-content:space-between"><span class="eyebrow">Guild member: ${esc(S.me.label)}</span><button class="btn sm" data-act="edit">Change my mind</button></div>`+(S.art['pc-'+S.me.id]?`<div class="portrait ${S.artNew.has('pc-'+S.me.id)?'new':''}">${artImg('pc-'+S.me.id)}</div>`:'')+sheetHTML(S.me.data);
+  return(S.me.data||S.step>0?'':`<div class="panel"><span class="eyebrow">Welcome to the guild, ${esc(S.me.label)}</span><p style="margin:.3em 0 0">Eight short steps to build the adventurer nobody else would hire. Nothing is final until the first session, and the DM only sees it once you sign.</p></div>`)+viewBuild();
+}
+
+/* ---------- DM views ---------- */
+function viewDM(){
+  if(!S.pass||S.err==='auth')return`<div class="panel" style="display:grid;gap:10px;max-width:420px"><h2 style="font-size:1.6rem">DM sign-in</h2>${S.err==='auth'?'<p class="down" style="margin:0">That passphrase did not work.</p>':''}<label class="f">Passphrase<input type="password" id="dmpass" autocomplete="current-password"></label><div><button class="btn pri" data-act="dmlogin">Open the DM view</button></div>${LIVE?'':'<p class="sub" style="margin:0">Demo mode: the passphrase is “dm” and everything stays on this device.</p>'}</div>`;
+  const ps=S.players;
+  const done=ps.filter(p=>p.data).length;
+  const rows=ps.map(p=>{const c=p.data;const x=c?derive(c):null;const url=location.origin+location.pathname+'?p='+p.token;
+    return`<div class="prow"><div class="who"><h3>${esc(p.label)}</h3><div class="sub">${c?esc(c.name)+' · '+esc(x.A.name)+' '+esc(x.K.name)+' · '+x.hpMax+' HP, AC '+x.ac:'Not sent yet'}</div><div class="link">${esc(url)}</div>${c?`<div class="artrow" style="margin-top:6px">${S.art['pc-'+p.id]?artImg('pc-'+p.id,'thumb'):''}<label class="btn sm">${S.art['pc-'+p.id]?'Replace portrait':'Add portrait'}<input type="file" accept="image/*" data-art="pc-${esc(p.id)}" data-shown="0"></label>${S.art['pc-'+p.id]?`<button class="btn sm ${(S.artIdx['pc-'+p.id]||{}).shown?'':'pri'}" data-act="reveal" data-id="pc-${esc(p.id)}">${(S.artIdx['pc-'+p.id]||{}).shown?'Hide portrait':'Reveal portrait'}</button>`:''}<button class="btn sm" data-act="prompt" data-pid="${esc(p.id)}">Copy image prompt</button></div>`:''}</div>
+      <div class="row" style="justify-content:flex-end">${c?`<button class="btn sm" data-act="open" data-id="${esc(p.id)}">Open</button>`:''}<button class="btn sm" data-act="copy" data-url="${esc(url)}">Copy link</button><button class="btn sm warn" data-act="remove" data-id="${esc(p.id)}">${S.armed==='rm'+p.id?'Tap again':'Remove'}</button></div></div>`}).join('');
+  const notes=ps.filter(p=>p.data&&(p.secret||(p.data.likes&&p.data.likes.length)||p.data.drive||p.data.tie)).map(p=>`<div><b>${esc(p.data.name)}</b> <span class="sub">(${esc(p.label)})</span>${p.data.drive?`<p style="margin:2px 0">Wants: ${esc(p.data.drive)}</p>`:''}${p.data.tie?`<p style="margin:2px 0">Tie: ${esc(p.data.tie)}</p>`:''}${p.data.likes&&p.data.likes.length?`<p class="sub" style="margin:2px 0">Enjoys: ${esc(p.data.likes.join(', '))}</p>`:''}${p.secret?`<p class="secret" style="margin:4px 0">${esc(p.secret)}</p>`:''}</div>`).join('');
+  return`<div class="row" style="justify-content:space-between"><h2 style="font-size:1.6rem">Your players</h2><span class="chip">${done} of ${ps.length} characters in</span></div>
+   ${ps.length?`<div style="display:grid;gap:8px">${rows}</div>`:`<div class="empty"><h2>No players yet</h2><p>Add each player below. Each gets a personal link to send on WhatsApp; no account or login needed.</p></div>`}
+   <div class="panel" style="display:grid;gap:8px"><span class="eyebrow">Add a player</span><div class="row"><input type="text" id="newplayer" placeholder="Their first name" style="flex:1;min-width:160px"><button class="btn" data-act="add">Create link</button></div></div>
+   <div class="panel" style="display:grid;gap:8px"><h3>For the story</h3>${notes||'<p class="muted" style="margin:0">What players want, how they know each other, what they enjoy and their secrets appear here as characters come in.</p>'}</div>
+   <div class="row"><button class="btn sm" data-act="refresh">Refresh</button><button class="btn sm" data-act="dmlogout">Sign out</button></div>`;
+}
+async function dmLoad(){try{S.players=await API.dmList(S.pass)||[];S.err=null;try{const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);await syncArt(all.map(a=>a.id),true)}catch(e){}const tb=await API.dmTableGet(S.pass);if(tb&&tb.dm&&tb.dm.scene)S.dmt=tb.dm}catch(e){if(e.status===401||/passphrase|auth/i.test(e.message)){S.err='auth'}else toast('Could not reach the table: '+esc(e.message))}render()}
+function renderOverlay(){const o=$('#ov');const p=S.open&&S.players.find(p=>p.id===S.open);if(!p||!p.data){o.innerHTML='';return}
+  o.innerHTML=`<div class="ov" data-act="closebg"><div class="card" role="dialog" aria-label="${esc(p.data.name)}"><div class="ovhead"><span class="eyebrow">Character sheet</span><button class="btn sm" data-act="close">Close</button></div>${S.art['pc-'+p.id]?`<div class="portrait" style="margin-bottom:12px">${artImg('pc-'+p.id)}</div>`:''}${sheetHTML(p.data,{by:p.label,secret:p.secret})}</div></div>`}
+
+/* ---------- render ---------- */
+function render(){
+  $('#brand').firstChild.nodeValue=CFG.name||'The Guild of Second Chances';
+  $('#role').innerHTML=LIVE?'':`<span class="sub">Demo:</span>${[['player','Player'],['dm','DM'],['table','Table screen']].map(([k,l])=>`<button class="chip ${(k==='dm'&&S.dmMode)||(k==='table'&&S.tableMode)||(k==='player'&&!S.dmMode&&!S.tableMode)?'on':''}" data-act="demo" data-v="${k}">${l}</button>`).join('')}`;
+  let tabs=[];
+  if(S.dmMode&&S.pass&&S.err!=='auth')tabs=[['players','Players'],['run','Run the table']];
+  else if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data&&!S.editing)tabs=[['me','My character'],['table','The table']];
+  const cur=S.dmMode?S.dtab:S.ptab;
+  $('#tabs').innerHTML=tabs.map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-current="${cur===k}">${l}</button>`).join('');
+  document.body.classList.toggle('tv',S.tableMode);
+  const showMood=S.tableMode||(!S.dmMode&&S.me&&S.me.data&&!S.editing);
+  setMood(showMood&&S.pub&&S.pub.scene?S.pub.scene.mood||'':'');
+  const body=S.tableMode?viewTable():S.dmMode?(S.dtab==='run'&&S.pass&&S.err!=='auth'?viewRun():viewDM()):viewPlayer();
+  $('#main').innerHTML='<section class="view">'+body+'</section>';
+  renderOverlay();
+}
+
+/* ---------- events ---------- */
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.draft){S.draft[t.dataset.draft]=t.value;saveDraft();const nb=$('#nextbtn');if(nb)nb.disabled=!stepOk(steps()[S.step][0])}});
+document.addEventListener('change',async e=>{const f=e.target;if(!f.dataset||!f.dataset.art||!f.files||!f.files[0])return;
+  toast('Uploading…');try{const data=await compressImage(f.files[0]);await API.dmArtPut(S.pass,f.dataset.art,data,f.dataset.shown==='1');S.art[f.dataset.art]={v:'local'+Date.now(),data};const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);if(S.dtab==='run')saveDmt();else render();toast(f.dataset.shown==='1'?'Image added.':'Portrait added. It stays hidden until you tap Reveal.')}catch(err){toast('That image did not upload: '+esc(err.message))}});
+document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.mdesc;if(!k)return;const m=S.dmt.monsters.find(x=>x.k===k);if(m){m.desc=e.target.value.trim();saveDmt()}});
+let dq=Promise.resolve();
+function saveDmt(msg){render();if(msg)toast(msg);const dm=clone(S.dmt),pub=pubFrom(dm);dq=dq.then(()=>API.dmTableSet(S.pass,dm,pub)).catch(e=>toast('The table did not update: '+esc(e.message)))}
+/* ---------- moods: canvas particles plus CSS layers ---------- */
+const FX={kind:'',parts:[],raf:0,next:0};
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function setMood(m){if(FX.kind===m)return;FX.kind=m;document.body.dataset.mood=m;FX.parts=[];FX.next=performance.now()+3000;cancelAnimationFrame(FX.raf);const c=$('#fxc');const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);if(m&&!RM&&['rain','storm','snow','cellar','forest','tavern'].includes(m))FX.raf=requestAnimationFrame(fxTick)}
+function fxSize(){const c=$('#fxc');const dpr=Math.min(2,window.devicePixelRatio||1);c.width=innerWidth*dpr;c.height=innerHeight*dpr;c.getContext('2d').setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',fxSize);fxSize();
+function spawn(k,W,H,init){const r=Math.random;
+  if(k==='rain'||k==='storm')return{x:r()*W*1.2,y:init?r()*H:-20,v:9+r()*6,l:10+r()*14};
+  if(k==='snow')return{x:r()*W,y:init?r()*H:-10,v:.4+r()*.8,s:1+r()*2.4,p:r()*6};
+  if(k==='cellar')return{x:r()*W,y:r()*H,vx:(r()-.5)*.15,vy:(r()-.5)*.1,s:.6+r()*1.4,a:.1+r()*.25};
+  if(k==='forest')return{x:r()*W,y:H*.3+r()*H*.7,vx:(r()-.5)*.3,vy:(r()-.5)*.3,p:r()*6,s:1.5+r()*1.5};
+  if(k==='tavern')return{x:W*.2+r()*W*.6,y:init?H-r()*H*.4:H+5,vy:.3+r()*.6,vx:(r()-.5)*.3,s:.8+r()*1.4,life:1};}
+function fxTick(t){
+  const k=FX.kind;if(!k)return;const c=$('#fxc'),x=c.getContext('2d'),W=innerWidth,H=innerHeight;
+  if(document.hidden){FX.raf=requestAnimationFrame(fxTick);return}
+  const want={rain:Math.min(140,W*H/9000),storm:Math.min(200,W*H/6000),snow:Math.min(110,W*H/12000),cellar:45,forest:28,tavern:26}[k]|0;
+  while(FX.parts.length<want)FX.parts.push(spawn(k,W,H,true));
+  x.clearRect(0,0,W,H);
+  for(let i=0;i<FX.parts.length;i++){const q=FX.parts[i];
+    if(k==='rain'||k==='storm'){q.y+=q.v;q.x-=q.v*.25;x.strokeStyle='rgba(180,200,235,.28)';x.lineWidth=1;x.beginPath();x.moveTo(q.x,q.y);x.lineTo(q.x+q.l*.25,q.y-q.l);x.stroke();if(q.y>H+20)FX.parts[i]=spawn(k,W,H)}
+    else if(k==='snow'){q.y+=q.v;q.p+=.01;q.x+=Math.sin(q.p)*.4;x.fillStyle='rgba(235,240,250,.55)';x.beginPath();x.arc(q.x,q.y,q.s,0,7);x.fill();if(q.y>H+10)FX.parts[i]=spawn(k,W,H)}
+    else if(k==='cellar'){q.x+=q.vx;q.y+=q.vy;if(q.x<0||q.x>W||q.y<0||q.y>H)FX.parts[i]=spawn(k,W,H);x.fillStyle='rgba(230,215,180,'+q.a+')';x.beginPath();x.arc(q.x,q.y,q.s,0,7);x.fill()}
+    else if(k==='forest'){q.x+=q.vx+Math.sin(t/1500+q.p)*.2;q.y+=q.vy+Math.cos(t/1700+q.p)*.2;const a=.25+.55*Math.max(0,Math.sin(t/700+q.p));const g=x.createRadialGradient(q.x,q.y,0,q.x,q.y,q.s*5);g.addColorStop(0,'rgba(215,240,120,'+a+')');g.addColorStop(1,'rgba(215,240,120,0)');x.fillStyle=g;x.beginPath();x.arc(q.x,q.y,q.s*5,0,7);x.fill();if(q.x<-20||q.x>W+20||q.y<0||q.y>H+20)FX.parts[i]=spawn(k,W,H)}
+    else if(k==='tavern'){q.y-=q.vy;q.x+=q.vx+Math.sin(t/600+i)*.15;q.life-=.0025;x.fillStyle='rgba(255,170,80,'+Math.max(0,q.life*.6)+')';x.beginPath();x.arc(q.x,q.y,q.s,0,7);x.fill();if(q.life<=0||q.y<H*.35)FX.parts[i]=spawn(k,W,H)}}
+  if(k==='storm'&&t>FX.next){const f=document.querySelector('.fx-flash');f.classList.remove('go');void f.offsetWidth;f.classList.add('go');FX.next=t+5000+Math.random()*9000}
+  FX.raf=requestAnimationFrame(fxTick);
+}
+async function pollTable(force){
+  if(document.hidden&&!force)return;
+  const on=S.tableMode||(!S.dmMode&&S.me&&S.me.data&&!S.editing);if(!on)return;
+  try{const r=await API.tableGet();const pub=(r&&r.pub)||{};const sig=JSON.stringify(pub);let ch=false;if(sig!==S.pubSig){S.pubSig=sig;S.pub=pub;ch=true}const ids=(pub.monsters||[]).map(m=>m.art);if(S.me&&S.me.id)ids.push('pc-'+S.me.id);if(await syncArt(ids,false))ch=true;if(ch)render();S.artNew.clear()}catch(e){}
+}
+setInterval(pollTable,4000);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='dmpass')document.querySelector('[data-act=dmlogin]').click();if(e.key==='Enter'&&e.target.id==='newplayer')document.querySelector('[data-act=add]').click()});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+  if(a==='closebg'&&e.target!==b)return;
+  if(!['remove','restart'].includes(a))S.armed=null;
+  const rr=()=>render();
+  switch(a){
+  case'pick':{const f=b.dataset.f,v=b.dataset.v;S.draft[f]=v;if(f==='cls'){S.draft.base={...CLS[v].arr};S.draft.skills=[];S.draft.cantrips=[];S.draft.spells=[]}if(f==='background'||f==='ancestry'){const fx=new Set([...((BG[S.draft.background]||{}).skills||[]),...((ANC[S.draft.ancestry]||{}).skills||[])]);S.draft.skills=S.draft.skills.filter(s=>!fx.has(s))}saveDraft();rr();break}
+  case'swap':{const x=b.dataset.a;if(!S.swap)S.swap=x;else{if(S.swap!==x){const t=S.draft.base[S.swap];S.draft.base[S.swap]=S.draft.base[x];S.draft.base[x]=t;saveDraft()}S.swap=null}rr();break}
+  case'recommend':S.draft.base={...CLS[S.draft.cls].arr};saveDraft();rr();break;
+  case'skill':case'spell':{const f=a==='skill'?'skills':b.dataset.f,v=b.dataset.v,L=S.draft[f];S.draft[f]=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();rr();break}
+  case'like':{const v=b.dataset.v,L=S.draft.likes;S.draft.likes=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();b.classList.toggle('on');break}
+  case'next':if(stepOk(steps()[S.step][0])){S.step++;window.scrollTo(0,0);rr()}break;
+  case'back':if(S.step>0){S.step--;window.scrollTo(0,0);rr()}break;
+  case'restart':if(S.armed!=='restart'){S.armed='restart';rr();break}S.armed=null;S.draft=blankDraft();saveDraft();S.step=0;rr();break;
+  case'submit':{b.disabled=true;try{const c=draftToChar();await API.saveMine(S.token,c,S.draft.secret);S.me.data=c;S.editing=false;S.step=0;toast('Signed in blood. Well, ink. The DM can see '+esc(c.name)+' now.');window.scrollTo(0,0)}catch(err){b.disabled=false;toast('That did not save: '+esc(err.message)+'. Your choices are kept on this phone, so try again in a moment.',7000)}rr();break}
+  case'edit':S.editing=true;S.step=0;S.draft=charToDraft(S.me.data,S.draft.secret);saveDraft();rr();break;
+  case'dmlogin':{const v=$('#dmpass').value;if(!v)break;S.pass=v;lsSet('wt2.pass',v);S.err=null;await dmLoad();break}
+  case'dmlogout':S.pass=null;lsSet('wt2.pass',null);S.players=[];rr();break;
+  case'refresh':await dmLoad();toast('Up to date.');break;
+  case'add':{const v=$('#newplayer').value.trim();if(!v)break;try{await API.dmAdd(S.pass,v);await dmLoad();toast('Link created for '+esc(v)+'. Tap “Copy link” and send it to them.')}catch(err){toast('Could not add: '+esc(err.message))}break}
+  case'remove':{const id=b.dataset.id;if(S.armed!=='rm'+id){S.armed='rm'+id;rr();break}S.armed=null;try{await API.dmRemove(S.pass,id);await dmLoad()}catch(err){toast('Could not remove: '+esc(err.message))}break}
+  case'copy':{const u=b.dataset.url;try{await navigator.clipboard.writeText(u);toast('Link copied.')}catch(err){toast('Copy this link: '+esc(u),9000)}break}
+  case'open':S.open=b.dataset.id;renderOverlay();break;
+  case'close':case'closebg':S.open=null;renderOverlay();break;
+  case'demo':{const v=b.dataset.v;S.dmMode=v==='dm';S.tableMode=v==='table';S.open=null;
+    if(v==='player'){const s=demo.load();if(!S.token||!s.players.find(p=>p.token===S.token)){if(!s.players.length){s.players.push({token:'demo'+Math.random().toString(36).slice(2,8),label:'Demo player'});demo.save(s)}S.token=s.players[0].token;lsSet('wt2.token',S.token)}S.me=await API.me(S.token);S.loaded=true;S.draft=lsGet(draftKey(),null)||blankDraft();S.step=0}
+    if(v==='dm'&&S.pass)await dmLoad();if(v==='table')await pollTable(true);window.scrollTo(0,0);rr();break}
+  case'tab':if(S.dmMode)S.dtab=b.dataset.t;else{S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true)}window.scrollTo(0,0);rr();break;
+  case'sceneset':S.dmt.scene={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};S.moodPick=null;saveDmt('The table can see the scene.');break;
+  case'moodpick':{S.dmt.scene.title=$('#stitle').value;S.dmt.scene.text=$('#stext').value;S.moodPick=b.dataset.v;rr();break}
+  case'scenesave':{const s={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};if(!s.title)break;const L=S.dmt.presets||clone(STARTER_SCENES);S.dmt.presets=[s,...L.filter(x=>x.title!==s.title)].slice(0,30);saveDmt('Saved as a preset.');break}
+  case'preset':{const L=S.dmt.presets||STARTER_SCENES;const s=L[+b.dataset.i];if(!s)break;S.dmt.scene={...S.dmt.scene,title:s.title,text:s.text};S.moodPick=s.mood||'';rr();toast('Loaded. Tap “Show to the table” when you are ready.');break}
+  case'presetdel':{const L=S.dmt.presets||clone(STARTER_SCENES);L.splice(+b.dataset.i,1);S.dmt.presets=L;saveDmt();break}
+  case'sceneclear':S.dmt.scene={title:'',text:''};saveDmt();break;
+  case'logadd':{const v=$('#logtext').value.trim();if(!v)break;S.dmt.log=[{text:v,at:Date.now()},...(S.dmt.log||[])].slice(0,40);saveDmt();break}
+  case'logdel':S.dmt.log.splice(+b.dataset.i,1);saveDmt();break;
+  case'emon':{const key=$('#mon').value,m=MON[key];const n=Math.min(12,Math.max(1,+$('#moncount').value||1));const same=S.dmt.monsters.filter(x=>x.base===key).length;
+    for(let i=0;i<n;i++)S.dmt.monsters.push({k:'m'+Math.random().toString(36).slice(2,9),base:key,name:m.name+(n>1||same?' '+(same+i+1):''),hp:m.hp,max:m.hp,ac:m.ac,atk:m.atk,note:m.note,desc:'',shown:false});saveDmt();break}
+  case'ecustom':{const nm=$('#cname').value.trim();if(!nm)break;const hp=+$('#chp').value||10;S.dmt.monsters.push({k:'m'+Math.random().toString(36).slice(2,9),name:nm,hp,max:hp,ac:+$('#cac').value||12,atk:[],note:'',desc:'',shown:false});saveDmt();break}
+  case'mhp':{const m=S.dmt.monsters.find(x=>x.k===b.dataset.k);if(!m)break;m.hp=Math.max(0,Math.min(m.max,m.hp+(+b.dataset.d)));saveDmt();break}
+  case'mdmg':{const m=S.dmt.monsters.find(x=>x.k===b.dataset.k);const n=Math.abs(+$('#mamt-'+b.dataset.k).value||0);if(!m||!n)break;m.hp=Math.max(0,m.hp-n);saveDmt(m.hp===0?esc(m.name)+' goes down.':null);break}
+  case'mshow':{const m=S.dmt.monsters.find(x=>x.k===b.dataset.k);if(!m)break;m.shown=!m.shown;saveDmt(m.shown?esc(m.name)+' is on the table.':null);break}
+  case'reveal':{const id=b.dataset.id;const sh=!(S.artIdx[id]||{}).shown;try{await API.dmArtShow(S.pass,id,sh);S.artIdx[id]={...(S.artIdx[id]||{id}),shown:sh};toast(sh?'Revealed. It flips onto their phone within a few seconds.':'Hidden again.');rr()}catch(err){toast('Could not change that: '+esc(err.message))}break}
+  case'prompt':{let txt='';if(b.dataset.mk){const m=S.dmt.monsters.find(x=>x.k===b.dataset.mk);if(m)txt=monPrompt(m)}else{const p=S.players.find(x=>String(x.id)===b.dataset.pid);if(p&&p.data)txt=pcPrompt(p.data)}if(!txt)break;
+    try{await navigator.clipboard.writeText(txt);toast('Prompt copied. Paste it into your image generator'+(b.dataset.pid?' and fill in the likeness part.':'.'))}catch(err){toast(esc(txt),15000)}break}
+  case'mrm':S.dmt.monsters=S.dmt.monsters.filter(x=>x.k!==b.dataset.k);saveDmt();break;
+  case'mrevealall':S.dmt.monsters.forEach(m=>m.shown=true);saveDmt('Everything is on the table.');break;
+  case'mcleardown':S.dmt.monsters=S.dmt.monsters.filter(m=>m.hp>0);saveDmt();break;
+  }
+});
+
+/* ---------- boot ---------- */
+(async()=>{
+  render();
+  if(S.tableMode){await pollTable(true);return}
+  if(S.dmMode){if(S.pass)await dmLoad();return}
+  if(!S.token){S.loaded=true;render();return}
+  try{S.me=await API.me(S.token);if(S.me&&S.me.data&&!lsGet(draftKey(),null))S.draft=charToDraft(S.me.data,'')}catch(e){toast('Could not reach the table: '+esc(e.message))}
+  S.loaded=true;render();
+})();
+})();
+</script>
+</body>
+</html>
