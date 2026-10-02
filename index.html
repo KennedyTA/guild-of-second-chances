@@ -265,6 +265,20 @@ body.tv .mons{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
 body.tv .mon b{font-size:1.15rem}
 .dmon{display:grid;gap:8px}
 .dmon.hidden{border-style:dashed;opacity:.85}
+.party{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.pc{display:flex;gap:10px;align-items:center;border:1px solid var(--accent);border-radius:10px;padding:8px 10px;background:var(--surface)}
+.pc.down{opacity:.6;filter:grayscale(.5)}
+.pc b{font-family:var(--display);letter-spacing:.06em}
+.pc .glyph,.pc .thumb{flex:none}
+.pc .hpbar{margin:4px 0 2px}
+body.tv .party{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+body.tv .pc b{font-size:1.3rem} body.tv .pc .sub{font-size:1.05rem} body.tv .pc .hpbar{height:14px}
+.track .big{font-family:var(--display);font-size:2.2rem;line-height:1}
+.track select{min-height:32px}
+.dpc{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:6px}
+.dpc:first-of-type{border-top:0;padding-top:0}
+/* solid sticky header so the page never shows through it when scrolling */
+header.top{position:sticky!important;top:0;z-index:30!important;background:var(--bg)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:0 6px 14px rgb(0 0 0 / .35)}
 </style>
 </head>
 <body>
@@ -559,7 +573,7 @@ const demo={
   load(){return lsGet('wt2.demo',{players:[]})},save(s){lsSet('wt2.demo',s)},
 };
 const API={
-  async me(token){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);return p?{id:p.token,label:p.label,data:p.data||null}:null}
+  async me(token){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);return p?{id:p.token,label:p.label,data:p.data||null,live:p.live||{}}:null}
     return rpc('wt_get_my_character',{p_token:token})},
   async saveMine(token,data,secret){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);if(!p)throw new Error('Unknown link');p.data=data;p.secret=secret;p.updated=new Date().toISOString();demo.save(s);return true}
     return rpc('wt_save_my_character',{p_token:token,p_data:data,p_secret:secret||''})},
@@ -578,13 +592,16 @@ const API={
   async tableGet(){if(!LIVE)return{pub:lsGet('wt2.pub',{})};return rpc('wt_table_get')},
   async dmTableGet(pass){if(!LIVE)return{dm:lsGet('wt2.dmt',null),pub:lsGet('wt2.pub',{})};return rpc('wt_dm_table_get',{p_pass:pass})},
   async dmTableSet(pass,dm,pub){if(!LIVE){lsSet('wt2.dmt',dm);lsSet('wt2.pub',pub);return true}return rpc('wt_dm_table_set',{p_pass:pass,p_dm:dm,p_pub:pub})},
+  async partyGet(){if(!LIVE)return demo.load().players.filter(p=>p.data).map(p=>({id:p.token,data:p.data,live:p.live||{}}));return rpc('wt_party_get')},
+  async saveLive(token,live){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);if(!p)throw new Error('Unknown link');p.live=live;demo.save(s);return true}return rpc('wt_save_my_live',{p_token:token,p_live:live})},
+  async dmSaveLive(pass,id,live){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);if(p){p.live=live;demo.save(s)}return true}return rpc('wt_dm_save_live',{p_pass:pass,p_id:id,p_live:live})},
   async dmSave(pass,id,data){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);p.data=data;demo.save(s);return true}
     return rpc('wt_dm_save_character',{p_pass:pass,p_id:id,p_data:data})}
 };
 
 /* ---------- state ---------- */
 const qs=new URLSearchParams(location.search);
-const S={art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',dtab:'players',pub:{},pubSig:'',seen:new Set(),dmt:{scene:{title:'',text:''},monsters:[],log:[]},
+const S={party:[],partySig:'',liveEdit:{},art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',dtab:'players',pub:{},pubSig:'',seen:new Set(),dmt:{scene:{title:'',text:''},monsters:[],log:[]},
   token:qs.get('p')||lsGet('wt2.token',null),dmMode:qs.has('dm'),pass:lsGet('wt2.pass',null),
   me:null,players:[],tab:null,open:null,draft:null,step:0,swap:null,armed:null,err:null,loaded:false,editing:false};
 if(qs.get('p'))lsSet('wt2.token',qs.get('p'));
@@ -715,12 +732,35 @@ async function syncArt(ids,dm){ids=[...new Set(ids.filter(Boolean))];if(!ids.len
 function artImg(id,cls){const a=S.art[id];return a?`<img class="${cls||''}" src="${a.data}" alt="">`:''}
 function monStatus(m){if(m.hp<=0)return'Down';const r=m.hp/m.max;if(r<=.5)return'Bloodied';if(r<1)return'Hurt';return'Unhurt'}
 function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25)}}
+/* ---------- live HP, conditions, slots ---------- */
+function liveOf(c,l){const x=derive(c);l=l||{};const max=x.hpMax;return{x,max,hp:l.hp==null?max:Math.max(0,Math.min(max,+l.hp)),tmp:Math.max(0,+l.tmp||0),conds:l.conds||[],slots:l.slots||[],res:l.res||{}}}
+function rawLive(L){return{hp:L.hp,tmp:L.tmp,conds:L.conds,slots:L.slots,res:L.res}}
+function hpChange(L,d){if(d<0){let dmg=-d;const t=Math.min(L.tmp,dmg);L.tmp-=t;dmg-=t;L.hp=Math.max(0,L.hp-dmg)}else L.hp=Math.min(L.max,L.hp+d);
+  if(L.hp<=0){if(!L.conds.includes('Unconscious'))L.conds=[...L.conds,'Unconscious']}else if(d>0)L.conds=L.conds.filter(c=>c!=='Unconscious')}
+function hpLine(L){const[st,cl]=hpState(L.hp,L.max);return{st,cl,w:Math.round(100*L.hp/L.max)}}
+function partyHTML(){const P=S.party||[];if(!P.length)return'';
+  return`<div style="display:grid;gap:10px"><span class="eyebrow">The party</span><div class="party">${P.map(p=>{const L=liveOf(p.data,p.live),h=hpLine(L),pid='pc-'+p.id;
+    return`<div class="pc ${L.hp<=0?'down':''}">${S.art[pid]?artImg(pid,'thumb'):`<span class="glyph">${esc((p.data.name||'?')[0])}</span>`}<div style="flex:1;min-width:0"><b>${esc(p.data.name)}</b><div class="hpbar"><i class="${h.cl}" style="width:${h.w}%"></i></div><div class="sub">${L.hp<=0?'<span class="down">Down</span>':L.hp+' / '+L.max+' HP'}${L.tmp?' · +'+L.tmp+' temp':''} · AC ${L.x.ac}</div>${L.conds.length?`<div class="row" style="gap:4px;margin-top:4px">${L.conds.map(c=>`<span class="chip bad" title="${esc(CONDS[c]||'')}">${esc(c)}</span>`).join('')}</div>`:''}</div></div>`}).join('')}</div></div>`}
+function condCtl(id,L){return`<div class="row" style="gap:6px">${L.conds.map(c=>`<button class="chip bad" data-act="lcond" data-id="${esc(id)}" data-v="${esc(c)}" title="${esc(CONDS[c]||'')}">${esc(c)} ×</button>`).join('')}<select data-lcondadd="${esc(id)}" aria-label="Add a condition"><option value="">${L.conds.length?'Add another…':'Add a condition…'}</option>${Object.keys(CONDS).filter(c=>!L.conds.includes(c)).map(c=>`<option>${esc(c)}</option>`).join('')}</select></div>`}
+function hpCtl(id,big){return`<div class="row">${[-5,-1,1,5].map(n=>`<button class="btn sm" data-act="lhp" data-id="${esc(id)}" data-d="${n}">${n>0?'+'+n:'−'+Math.abs(n)}</button>`).join('')}<input type="number" inputmode="numeric" min="0" id="lamt-${esc(id)}" placeholder="${big?'amount':'amt'}" style="width:96px;min-height:32px" aria-label="Amount"><button class="btn sm warn" data-act="ldmg" data-id="${esc(id)}">${big?'Ouch':'Hit'}</button><button class="btn sm" data-act="lheal" data-id="${esc(id)}">Heal</button>${big?`<button class="btn sm" data-act="ltmp" data-id="${esc(id)}">Temp HP</button>`:''}</div>`}
+function trackerHTML(c,live,id){const L=liveOf(c,live),h=hpLine(L),x=L.x;
+  const slots=x.cast&&x.cast.slots.length?`<div class="f">Spell slots <span class="h">Tap one when you cast with it.</span>${x.cast.slots.map((n,i)=>`<div class="row" style="margin-top:4px"><span class="sub" style="width:64px">Level ${i+1}</span><div class="pips">${Array.from({length:n},(_,j)=>`<button class="pip ${j<(L.slots[i]||0)?'used':''}" data-act="lslot" data-id="${esc(id)}" data-i="${i}" data-j="${j}" aria-label="Level ${i+1} slot ${j+1}"></button>`).join('')}</div></div>`).join('')}</div>`:'';
+  const res=x.res.length?`<div class="f">Once-per-rest powers${x.res.map(r=>`<div class="row" style="margin-top:4px"><span class="sub" style="min-width:64px">${esc(r.label)}</span><div class="pips">${Array.from({length:r.max},(_,j)=>`<button class="pip ${j<(L.res[r.key]||0)?'used':''}" data-act="lres" data-id="${esc(id)}" data-k="${esc(r.key)}" data-j="${j}" aria-label="${esc(r.label)} use ${j+1}"></button>`).join('')}</div></div>`).join('')}</div>`:'';
+  return`<div class="panel track" style="display:grid;gap:10px"><div class="row" style="justify-content:space-between"><h3>Right now</h3><span class="chip ${L.hp<=0?'bad':''}">${h.st}</span></div>
+   <div class="row" style="align-items:baseline"><span class="big num">${L.hp}</span><span class="muted">/ ${L.max} HP${L.tmp?' · +'+L.tmp+' temp':''} · AC ${x.ac}</span></div>
+   <div class="hpbar"><i class="${h.cl}" style="width:${h.w}%"></i></div>${hpCtl(id,true)}
+   <div class="f">Conditions ${condCtl(id,L)}</div>${slots}${res}
+   <div class="row"><button class="btn sm" data-act="lrest" data-id="${esc(id)}" data-v="short">Short rest</button><button class="btn sm" data-act="lrest" data-id="${esc(id)}" data-v="long">${S.armed==='long'+id?'Tap again: full rest':'Long rest'}</button></div>
+   <p class="sub" style="margin:0">The DM and the table see these numbers too. Lying about them is between you and your god.</p></div>`}
+function dmPartyHTML(){const P=S.party||[];
+  return`<div class="panel" style="display:grid;gap:10px"><div class="row" style="justify-content:space-between"><h3>The party</h3>${P.length?`<button class="btn sm" data-act="lrestall">${S.armed==='restall'?'Tap again':'Long rest for all'}</button>`:''}</div>
+   ${P.length?P.map(p=>{const L=liveOf(p.data,p.live),h=hpLine(L);return`<div class="dpc"><div class="row" style="justify-content:space-between"><b>${esc(p.data.name)}</b><span class="muted">${L.hp<=0?'<span class="down">Down</span>':L.hp+' / '+L.max+' HP'}${L.tmp?' · +'+L.tmp+' temp':''} · AC ${L.x.ac}</span></div><div class="hpbar"><i class="${h.cl}" style="width:${h.w}%"></i></div>${hpCtl(p.id,false)}${condCtl(p.id,L)}</div>`}).join(''):'<p class="muted" style="margin:0">Characters appear here once players sign the ledger. Players can change their own HP too; you see it within a few seconds.</p>'}</div>`}
 function viewTable(){
   const P=S.pub||{};const fresh=[];
   const mons=(P.monsters||[]).map(m=>{const n=!S.seen.has(m.k);if(n)fresh.push(m.k);const has=!!S.art[m.art];return`<div class="mon ${has?'has-art':''} ${m.status==='Down'?'down':''} ${n?'new':''}">${has?artImg(m.art,'art'):''}<span class="st" style="color:var(--blood)">${esc(m.status)}</span>${has?'<span></span>':`<span class="glyph">${esc((m.name||'?')[0])}</span>`}<b>${esc(m.name)}</b>${m.desc?`<p>${esc(m.desc)}</p>`:''}</div>`}).join('');
   fresh.forEach(k=>S.seen.add(k));
   const sc=P.scene?`<div class="panel scene"><span class="eyebrow">Now</span><h2>${esc(P.scene.title)}</h2>${P.scene.text?`<p>${esc(P.scene.text)}</p>`:''}</div>`:`<div class="empty"><h2>The lantern is not lit yet</h2><p>The DM is still scheming. Pour yourself a drink. When the scene is set it appears here, and monsters flip onto the table when they arrive.</p></div>`;
-  return sc+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
+  return sc+partyHTML()+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
 }
 function viewRun(){
   const d=S.dmt;const tv=location.origin+location.pathname+'?table';
@@ -742,6 +782,7 @@ function viewRun(){
     <div class="log">${(d.log||[]).map((l,i)=>`<div class="row" style="justify-content:space-between"><span style="flex:1;min-width:0">${esc(l.text)}</span><button class="btn sm" data-act="logdel" data-i="${i}" aria-label="Remove">×</button></div>`).join('')}</div></div>
    <div class="panel" style="display:grid;gap:6px"><h3>Table screen</h3><p class="sub" style="margin:0">Open this on a TV or a spare laptop. Players also see it under “The table” on their phones.</p><div class="link">${esc(tv)}</div><div><button class="btn sm" data-act="copy" data-url="${esc(tv)}">Copy link</button></div></div>
   </div><div style="display:grid;gap:14px;align-content:start">
+   <div id="dmparty">${dmPartyHTML()}</div>
    <div class="panel" style="display:grid;gap:10px"><h3>Bring in monsters</h3><p class="sub" style="margin:0">They arrive hidden. Tap Reveal at the dramatic moment and they flip onto everyone’s screen.</p>
     <div class="row"><select id="mon" style="flex:1;min-width:170px" aria-label="Monster">${Object.entries(MON).map(([k,m])=>`<option value="${k}">${m.name} (AC ${m.ac}, ${m.hp} HP)</option>`).join('')}</select><input type="number" id="moncount" value="1" min="1" max="12" style="width:64px" aria-label="How many"><button class="btn" data-act="emon">Add</button></div>
     <details><summary class="sub" style="cursor:pointer">Something else</summary><div class="row" style="margin-top:8px"><input type="text" id="cname" placeholder="Name" style="flex:2;min-width:140px"><input type="number" id="chp" placeholder="HP" style="width:76px"><input type="number" id="cac" placeholder="AC" style="width:76px"><button class="btn" data-act="ecustom">Add</button></div></details>
@@ -754,8 +795,8 @@ function viewPlayer(){
   if(!S.token)return`<div class="empty"><h2>Members only</h2><p>The DM sends each player their own link. Open that one and your character is saved to it.</p></div>`;
   if(!S.loaded)return'<p class="banner">Loading your character…</p>';
   if(!S.me)return`<div class="empty"><h2>The doorman does not recognise you</h2><p>Ask the DM for a fresh link.</p></div>`;
-  if(S.me.data&&!S.editing)return`<div class="row" style="justify-content:space-between"><span class="eyebrow">Guild member: ${esc(S.me.label)}</span><button class="btn sm" data-act="edit">Change my mind</button></div>`+(S.art['pc-'+S.me.id]?`<div class="portrait ${S.artNew.has('pc-'+S.me.id)?'new':''}">${artImg('pc-'+S.me.id)}</div>`:'')+sheetHTML(S.me.data);
-  return(S.me.data||S.step>0?'':`<div class="panel"><span class="eyebrow">Welcome to the guild, ${esc(S.me.label)}</span><p style="margin:.3em 0 0">Eight short steps to build the adventurer nobody else would hire. Nothing is final until the first session, and the DM only sees it once you sign.</p></div>`)+viewBuild();
+  if(S.me.data&&!S.editing)return`<div class="row" style="justify-content:space-between"><span class="eyebrow">Guild member: ${esc(S.me.label)}</span></div>`+trackerHTML(S.me.data,S.me.live,S.me.id)+(S.art['pc-'+S.me.id]?`<div class="portrait ${S.artNew.has('pc-'+S.me.id)?'new':''}">${artImg('pc-'+S.me.id)}</div>`:'')+sheetHTML(S.me.data)+`<div class="panel" style="display:grid;gap:8px"><h3>Change my mind</h3><p class="muted" style="margin:0">Opens the character builder again with your current choices filled in, so you can swap a skill, a spell or your whole backstory. Nothing changes until you sign the ledger again at the end, and you can cancel at any step. Your hit points and conditions stay as they are.</p><div><button class="btn sm" data-act="edit">Rebuild my character</button></div></div>`;
+  return(S.editing?`<div class="panel row" style="justify-content:space-between"><span class="muted" style="flex:1;min-width:180px">You are editing ${esc(S.me.data.name||'your character')}. Nothing changes until you sign again.</span><button class="btn sm" data-act="canceledit">Cancel, keep it as it was</button></div>`:'')+(S.me.data||S.step>0?'':`<div class="panel"><span class="eyebrow">Welcome to the guild, ${esc(S.me.label)}</span><p style="margin:.3em 0 0">Eight short steps to build the adventurer nobody else would hire. Nothing is final until the first session, and the DM only sees it once you sign.</p></div>`)+viewBuild();
 }
 
 /* ---------- DM views ---------- */
@@ -774,7 +815,7 @@ function viewDM(){
    <div class="panel" style="display:grid;gap:8px"><h3>For the story</h3>${notes||'<p class="muted" style="margin:0">What players want, how they know each other, what they enjoy and their secrets appear here as characters come in.</p>'}</div>
    <div class="row"><button class="btn sm" data-act="refresh">Refresh</button><button class="btn sm" data-act="dmlogout">Sign out</button></div>`;
 }
-async function dmLoad(){try{S.players=await API.dmList(S.pass)||[];S.err=null;try{const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);await syncArt(all.map(a=>a.id),true)}catch(e){}const tb=await API.dmTableGet(S.pass);if(tb&&tb.dm&&tb.dm.scene)S.dmt=tb.dm}catch(e){if(e.status===401||/passphrase|auth/i.test(e.message)){S.err='auth'}else toast('Could not reach the table: '+esc(e.message))}render()}
+async function dmLoad(){try{S.players=await API.dmList(S.pass)||[];S.err=null;try{const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);await syncArt(all.map(a=>a.id),true)}catch(e){}const tb=await API.dmTableGet(S.pass);if(tb&&tb.dm&&tb.dm.scene)S.dmt=tb.dm;try{S.party=await API.partyGet()||[];S.partySig=JSON.stringify(S.party)}catch(e){}}catch(e){if(e.status===401||/passphrase|auth/i.test(e.message)){S.err='auth'}else toast('Could not reach the table: '+esc(e.message))}render()}
 function renderOverlay(){const o=$('#ov');const p=S.open&&S.players.find(p=>p.id===S.open);if(!p||!p.data){o.innerHTML='';return}
   o.innerHTML=`<div class="ov" data-act="closebg"><div class="card" role="dialog" aria-label="${esc(p.data.name)}"><div class="ovhead"><span class="eyebrow">Character sheet</span><button class="btn sm" data-act="close">Close</button></div>${S.art['pc-'+p.id]?`<div class="portrait" style="margin-bottom:12px">${artImg('pc-'+p.id)}</div>`:''}${sheetHTML(p.data,{by:p.label,secret:p.secret})}</div></div>`}
 
@@ -835,17 +876,42 @@ async function pollTable(force){
   try{const r=await API.tableGet();const pub=(r&&r.pub)||{};const sig=JSON.stringify(pub);let ch=false;if(sig!==S.pubSig){S.pubSig=sig;S.pub=pub;ch=true}const ids=(pub.monsters||[]).map(m=>m.art);if(S.me&&S.me.id)ids.push('pc-'+S.me.id);if(await syncArt(ids,false))ch=true;if(ch)render();S.artNew.clear()}catch(e){}
 }
 setInterval(pollTable,4000);
+function busy(){const a=document.activeElement;return a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='file'}
+function mergeParty(got){const now=Date.now();return got.map(p=>{const mine=(S.party||[]).find(q=>q.id===p.id);return mine&&S.liveEdit[p.id]&&now-S.liveEdit[p.id]<6000?{...p,live:mine.live}:p})}
+async function pollParty(){if(document.hidden)return;
+  const dmRun=S.dmMode&&S.pass&&S.err!=='auth'&&S.dtab==='run';const on=dmRun||S.tableMode||(!S.dmMode&&S.me&&S.me.data&&!S.editing);if(!on)return;
+  try{const got=mergeParty(await API.partyGet()||[]);const sig=JSON.stringify(got);if(sig===S.partySig)return;S.partySig=sig;S.party=got;
+    if(!S.dmMode&&S.me&&!(S.liveEdit[S.me.id]&&Date.now()-S.liveEdit[S.me.id]<6000)){const me=got.find(p=>p.id===S.me.id);if(me)S.me.live=me.live}
+    if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data){const ids=got.map(p=>'pc-'+p.id);await syncArt(ids,false)}else if(S.tableMode)await syncArt(got.map(p=>'pc-'+p.id),false);
+    if(dmRun){const box=$('#dmparty');if(box&&!box.contains(document.activeElement))box.innerHTML=dmPartyHTML()}else if(!busy())render()}catch(e){}}
+setInterval(pollParty,4000);setTimeout(pollParty,700);
+const liveQ={};
+function setLive(id,fn){const dm=S.dmMode;let rec=dm?(S.party||[]).find(p=>p.id===id):(S.me&&S.me.id===id?S.me:null);if(!rec||!rec.data)return;
+  const L=liveOf(rec.data,rec.live);fn(L,rec);rec.live=rawLive(L);
+  if(!dm){const pe=(S.party||[]).find(p=>p.id===id);if(pe)pe.live=rec.live}
+  S.liveEdit[id]=Date.now();
+  if(dm){const box=$('#dmparty');if(box)box.innerHTML=dmPartyHTML()}else render();
+  clearTimeout(liveQ[id]);liveQ[id]=setTimeout(()=>{const v=rec.live;(dm?API.dmSaveLive(S.pass,id,v):API.saveLive(S.token,v)).then(()=>{S.liveEdit[id]=Date.now()}).catch(e=>toast('That did not save: '+esc(e.message)))},500)}
+document.addEventListener('change',e=>{const id=e.target.dataset&&e.target.dataset.lcondadd;if(!id||!e.target.value)return;const v=e.target.value;setLive(id,L=>{if(!L.conds.includes(v))L.conds=[...L.conds,v]});toast(esc(v)+': '+esc(CONDS[v]||''),5000)});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='dmpass')document.querySelector('[data-act=dmlogin]').click();if(e.key==='Enter'&&e.target.id==='newplayer')document.querySelector('[data-act=add]').click()});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
   if(a==='closebg'&&e.target!==b)return;
-  if(!['remove','restart'].includes(a))S.armed=null;
+  if(!['remove','restart','lrest','lrestall'].includes(a))S.armed=null;
   const rr=()=>render();
   switch(a){
   case'pick':{const f=b.dataset.f,v=b.dataset.v;S.draft[f]=v;if(f==='cls'){S.draft.base={...CLS[v].arr};S.draft.skills=[];S.draft.cantrips=[];S.draft.spells=[]}if(f==='background'||f==='ancestry'){const fx=new Set([...((BG[S.draft.background]||{}).skills||[]),...((ANC[S.draft.ancestry]||{}).skills||[])]);S.draft.skills=S.draft.skills.filter(s=>!fx.has(s))}saveDraft();rr();break}
   case'swap':{const x=b.dataset.a;if(!S.swap)S.swap=x;else{if(S.swap!==x){const t=S.draft.base[S.swap];S.draft.base[S.swap]=S.draft.base[x];S.draft.base[x]=t;saveDraft()}S.swap=null}rr();break}
   case'recommend':S.draft.base={...CLS[S.draft.cls].arr};saveDraft();rr();break;
   case'skill':case'spell':{const f=a==='skill'?'skills':b.dataset.f,v=b.dataset.v,L=S.draft[f];S.draft[f]=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();rr();break}
+  case'lhp':setLive(b.dataset.id,L=>hpChange(L,+b.dataset.d));break;
+  case'ldmg':case'lheal':case'ltmp':{const id=b.dataset.id,inp=document.getElementById('lamt-'+id),n=Math.abs(parseInt(inp&&inp.value,10)||0);if(!n){inp&&inp.focus();break}if(inp)inp.value='';setLive(id,L=>{if(a==='ltmp')L.tmp=Math.max(L.tmp,n);else hpChange(L,a==='ldmg'?-n:n)});break}
+  case'lcond':{const v=b.dataset.v;setLive(b.dataset.id,L=>{L.conds=L.conds.filter(c=>c!==v)});break}
+  case'lslot':{const i=+b.dataset.i,j=+b.dataset.j;setLive(b.dataset.id,L=>{const s=[...L.slots];const u=s[i]||0;s[i]=j<u?j:j+1;L.slots=s});break}
+  case'lres':{const k=b.dataset.k,j=+b.dataset.j;setLive(b.dataset.id,L=>{const u=L.res[k]||0;L.res={...L.res,[k]:j<u?j:j+1}});break}
+  case'lrest':{const id=b.dataset.id,v=b.dataset.v;if(v==='long'&&S.armed!=='long'+id){S.armed='long'+id;if(S.dmMode){const box=$('#dmparty');if(box)box.innerHTML=dmPartyHTML()}else rr();break}S.armed=null;
+    setLive(id,L=>{if(v==='long'){L.hp=L.max;L.tmp=0;L.slots=[];L.res={};L.conds=L.conds.filter(c=>c!=='Unconscious')}else{const r={...L.res};L.x.res.forEach(x=>{if(x.rest==='short')r[x.key]=0});L.res=r}});toast(v==='long'?'A full night’s sleep. Everything is back, including your dignity, mostly.':'A short rest. Short-rest powers are back.');break}
+  case'lrestall':{if(S.armed!=='restall'){S.armed='restall';const box=$('#dmparty');if(box)box.innerHTML=dmPartyHTML();break}S.armed=null;(S.party||[]).forEach(p=>setLive(p.id,L=>{L.hp=L.max;L.tmp=0;L.slots=[];L.res={};L.conds=L.conds.filter(c=>c!=='Unconscious')}));toast('Everyone sleeps it off.');break}
   case'avail':{S.draft.avail=b.dataset.v;saveDraft();rr();break}
   case'away':{S.draft.away=S.draft.away===b.dataset.v?'':b.dataset.v;saveDraft();rr();break}
   case'like':{const v=b.dataset.v,L=S.draft.likes;S.draft.likes=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();b.classList.toggle('on');break}
@@ -853,7 +919,8 @@ document.addEventListener('click',async e=>{
   case'back':if(S.step>0){S.step--;window.scrollTo(0,0);rr()}break;
   case'restart':if(S.armed!=='restart'){S.armed='restart';rr();break}S.armed=null;S.draft=blankDraft();saveDraft();S.step=0;rr();break;
   case'submit':{b.disabled=true;try{const c=draftToChar();await API.saveMine(S.token,c,S.draft.secret);S.me.data=c;S.editing=false;S.step=0;toast('Signed in blood. Well, ink. The DM can see '+esc(c.name)+' now.');window.scrollTo(0,0)}catch(err){b.disabled=false;toast('That did not save: '+esc(err.message)+'. Your choices are kept on this phone, so try again in a moment.',7000)}rr();break}
-  case'edit':S.editing=true;S.step=0;S.draft=charToDraft(S.me.data,S.draft.secret);saveDraft();rr();break;
+  case'canceledit':S.editing=false;S.step=0;S.ptab='me';window.scrollTo(0,0);rr();break;
+  case'edit':S.editing=true;S.step=0;window.scrollTo(0,0);S.draft=charToDraft(S.me.data,S.draft.secret);saveDraft();rr();break;
   case'dmlogin':{const v=$('#dmpass').value;if(!v)break;S.pass=v;lsSet('wt2.pass',v);S.err=null;await dmLoad();break}
   case'dmlogout':S.pass=null;lsSet('wt2.pass',null);S.players=[];rr();break;
   case'refresh':await dmLoad();toast('Up to date.');break;
@@ -865,7 +932,7 @@ document.addEventListener('click',async e=>{
   case'demo':{const v=b.dataset.v;S.dmMode=v==='dm';S.tableMode=v==='table';S.open=null;
     if(v==='player'){const s=demo.load();if(!S.token||!s.players.find(p=>p.token===S.token)){if(!s.players.length){s.players.push({token:'demo'+Math.random().toString(36).slice(2,8),label:'Demo player'});demo.save(s)}S.token=s.players[0].token;lsSet('wt2.token',S.token)}S.me=await API.me(S.token);S.loaded=true;S.draft=lsGet(draftKey(),null)||blankDraft();S.step=0}
     if(v==='dm'&&S.pass)await dmLoad();if(v==='table')await pollTable(true);window.scrollTo(0,0);rr();break}
-  case'tab':if(S.dmMode)S.dtab=b.dataset.t;else{S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true)}window.scrollTo(0,0);rr();break;
+  case'tab':if(S.dmMode){S.dtab=b.dataset.t;if(S.dtab==='run')setTimeout(pollParty,50)}else{S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true);setTimeout(pollParty,50)}window.scrollTo(0,0);rr();break;
   case'sceneset':S.dmt.scene={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};S.moodPick=null;saveDmt('The table can see the scene.');break;
   case'moodpick':{S.dmt.scene.title=$('#stitle').value;S.dmt.scene.text=$('#stext').value;S.moodPick=b.dataset.v;rr();break}
   case'scenesave':{const s={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};if(!s.title)break;const L=S.dmt.presets||clone(STARTER_SCENES);S.dmt.presets=[s,...L.filter(x=>x.title!==s.title)].slice(0,30);saveDmt('Saved as a preset.');break}
