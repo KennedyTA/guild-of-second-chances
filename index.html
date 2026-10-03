@@ -279,6 +279,29 @@ body.tv .pc b{font-size:1.3rem} body.tv .pc .sub{font-size:1.05rem} body.tv .pc 
 .dpc:first-of-type{border-top:0;padding-top:0}
 /* solid sticky header so the page never shows through it when scrolling */
 header.top{position:sticky!important;top:0;z-index:30!important;background:var(--bg)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:0 6px 14px rgb(0 0 0 / .35)}
+.whisper{max-width:520px!important;border-color:var(--accent)!important;box-shadow:0 0 40px rgb(217 180 91 / .25);display:grid;gap:12px}
+.whisper .wtext{font-size:1.25rem;margin:0;white-space:pre-wrap}
+.wlist{display:grid;gap:8px}.wlist>div{border-left:2px solid var(--accent);padding:2px 0 2px 10px}
+.cxs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.cx{border:1px solid var(--accent);border-radius:10px;background:linear-gradient(#1B2B58,#0E1630);display:grid;grid-template-rows:auto 1fr;overflow:hidden;position:relative}
+.cx .face{aspect-ratio:2/3;display:grid;place-items:center;border-bottom:1px solid var(--line);background:#101a3a}
+.cx .face img{width:100%;height:100%;object-fit:cover;display:block}
+.cx .face .glyph{width:64px;height:64px;font-size:1.8rem}
+.cx .txt{padding:8px 10px;display:grid;gap:2px}.cx .txt b{font-family:var(--display);letter-spacing:.06em}
+.cx .txt p{margin:0;font-size:.88rem;color:var(--muted)}
+.cx.hidden{opacity:.55;border-style:dashed}
+@media (prefers-reduced-motion:no-preference){.cx.new{animation:flip .7s ease-out}}
+body.tv .cxs{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.gstep{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--surface);display:grid;gap:8px}
+.gstep.now{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.gstep.done{opacity:.6}
+.gstep ul{margin:0;padding-left:0;list-style:none;display:grid;gap:4px}
+.gstep li label{display:flex;gap:8px;align-items:flex-start;font-weight:400}
+.init{display:grid;gap:6px}.init .row{gap:8px}
+.init .cur{outline:2px solid var(--accent);border-radius:8px}
+.crib details{border-top:1px solid var(--line);padding:6px 0}.crib summary{cursor:pointer;font-weight:700}
+.crib p,.crib li{margin:.3em 0;font-size:.95rem}
+.turns{display:flex;gap:6px;flex-wrap:wrap}.turns span{border:1px solid var(--line);border-radius:999px;padding:2px 10px}.turns span.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
 </style>
 </head>
 <body>
@@ -595,11 +618,11 @@ const demo={
   load(){return lsGet('wt2.demo',{players:[]})},save(s){lsSet('wt2.demo',s)},
 };
 const API={
-  async me(token){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);return p?{id:p.token,label:p.label,data:p.data||null,live:p.live||{}}:null}
+  async me(token){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);return p?{id:p.token,label:p.label,data:p.data||null,live:p.live||{},preset:p.preset||{}}:null}
     return rpc('wt_get_my_character',{p_token:token})},
   async saveMine(token,data,secret){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);if(!p)throw new Error('Unknown link');p.data=data;p.secret=secret;p.updated=new Date().toISOString();demo.save(s);return true}
     return rpc('wt_save_my_character',{p_token:token,p_data:data,p_secret:secret||''})},
-  async dmList(pass){if(!LIVE){if(pass!==lsGet('wt2.demopass','dm'))throw Object.assign(new Error('bad'),{status:401});return demo.load().players.map(p=>({id:p.token,label:p.label,token:p.token,data:p.data||null,secret:p.secret||'',updated_at:p.updated||null}))}
+  async dmList(pass){if(!LIVE){if(pass!==lsGet('wt2.demopass','dm'))throw Object.assign(new Error('bad'),{status:401});return demo.load().players.map(p=>({id:p.token,label:p.label,token:p.token,data:p.data||null,secret:p.secret||'',preset:p.preset||{},inbox:p.inbox||[],updated_at:p.updated||null}))}
     return rpc('wt_dm_list',{p_pass:pass})},
   async dmAdd(pass,label){if(!LIVE){const s=demo.load();const token=Math.random().toString(36).slice(2,12);s.players.push({token,label});demo.save(s);return token}
     return rpc('wt_dm_add_player',{p_pass:pass,p_label:label})},
@@ -614,6 +637,10 @@ const API={
   async tableGet(){if(!LIVE)return{pub:lsGet('wt2.pub',{})};return rpc('wt_table_get')},
   async dmTableGet(pass){if(!LIVE)return{dm:lsGet('wt2.dmt',null),pub:lsGet('wt2.pub',{})};return rpc('wt_dm_table_get',{p_pass:pass})},
   async dmTableSet(pass,dm,pub){if(!LIVE){lsSet('wt2.dmt',dm);lsSet('wt2.pub',pub);return true}return rpc('wt_dm_table_set',{p_pass:pass,p_dm:dm,p_pub:pub})},
+  async dmSetPreset(pass,id,preset){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);if(p){p.preset=preset;demo.save(s)}return true}return rpc('wt_dm_set_preset',{p_pass:pass,p_id:id,p_preset:preset})},
+  async dmWhisper(pass,id,text){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);if(p){p.inbox=[...(p.inbox||[]),{id:'w'+Date.now().toString(36),text,at:new Date().toISOString()}].slice(-20);demo.save(s)}return true}return rpc('wt_dm_whisper',{p_pass:pass,p_id:id,p_text:text})},
+  async myInbox(token){if(!LIVE){const p=demo.load().players.find(p=>p.token===token);return p?p.inbox||[]:[]}return rpc('wt_my_inbox',{p_token:token})},
+  async inboxReply(token,mid,reply){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);if(p){p.inbox=(p.inbox||[]).map(w=>w.id===mid?{...w,reply,rat:new Date().toISOString()}:w);demo.save(s)}return true}return rpc('wt_inbox_reply',{p_token:token,p_mid:mid,p_reply:reply})},
   async partyGet(){if(!LIVE)return demo.load().players.filter(p=>p.data).map(p=>({id:p.token,data:p.data,live:p.live||{}}));return rpc('wt_party_get')},
   async saveLive(token,live){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);if(!p)throw new Error('Unknown link');p.live=live;demo.save(s);return true}return rpc('wt_save_my_live',{p_token:token,p_live:live})},
   async dmSaveLive(pass,id,live){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);if(p){p.live=live;demo.save(s)}return true}return rpc('wt_dm_save_live',{p_pass:pass,p_id:id,p_live:live})},
@@ -623,7 +650,7 @@ const API={
 
 /* ---------- state ---------- */
 const qs=new URLSearchParams(location.search);
-const S={party:[],partySig:'',liveEdit:{},art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',dtab:'players',pub:{},pubSig:'',seen:new Set(),dmt:{scene:{title:'',text:''},monsters:[],log:[]},
+const S={cxSeen:new Set(),inbox:null,inboxSig:'',wseen:new Set(),party:[],partySig:'',liveEdit:{},art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',dtab:'players',pub:{},pubSig:'',seen:new Set(),dmt:{scene:{title:'',text:''},monsters:[],log:[]},
   token:qs.get('p')||lsGet('wt2.token',null),dmMode:qs.has('dm'),pass:lsGet('wt2.pass',null),
   me:null,players:[],tab:null,open:null,draft:null,step:0,swap:null,armed:null,err:null,loaded:false,editing:false};
 if(qs.get('p'))lsSet('wt2.token',qs.get('p'));
@@ -652,8 +679,8 @@ function sheetHTML(c,opts){
      ${x.cast.cantrips.length?'<div class="eyebrow" style="margin-top:8px">Cantrips (free, at will)</div><div class="list">'+x.cast.cantrips.map(sp).join('')+'</div>':''}
      ${x.cast.spells.length?'<div class="eyebrow" style="margin-top:8px">Spells (use a slot)</div><div class="list">'+x.cast.spells.map(sp).join('')+'</div>':''}</div>`}
   const res=x.res.length?`<div class="panel"><h3>Once-per-rest powers</h3>${x.res.map(r=>`<p style="margin:8px 0 0"><b>${esc(r.label)}</b> <span class="muted">×${r.max}, back after a ${r.rest} rest.</span><br><span class="muted" style="font-size:.9rem">${esc(r.help)}${r.key==='breath'?' DC '+x.breathDC+'.':''}</span></p>`).join('')}</div>`:'';
-  const B=BG[c.background]||{gear:[],gold:0};const items={};[...x.K.gear,...(B.gear||[])].forEach(n=>items[n]=(items[n]||0)+1);
-  const inv=Object.entries(items).map(([n,q])=>`<div class="it"><span>${esc(n)}</span><span class="num">${q>1?'×'+q:''}</span></div>`).join('');
+  const B=BG[c.background]||{gear:[],gold:0};const items={};[...x.K.gear,...(B.gear||[])].forEach(n=>items[n]=(items[n]||0)+1);const gifts=((opts&&opts.gifts)||[]).filter(Boolean);
+  const inv=Object.entries(items).map(([n,q])=>`<div class="it"><span>${esc(n)}</span><span class="num">${q>1?'×'+q:''}</span></div>`).join('')+gifts.map(n=>`<div class="it"><span>${esc(n)}</span><span class="sub">from the DM</span></div>`).join('');
   const story=[['look','Look'],['personality','Personality'],['drive','What drives them'],['tie','Tie to the party'],['never','Would never']].filter(([k])=>c[k]).map(([k,l])=>`<dt>${l}</dt><dd>${esc(c[k])}</dd>`).join('');
   return`<div class="sheet">
    <div><h2>${esc(c.name||'Unnamed')}</h2><div class="sub">Level ${x.lvl} ${esc(x.A.name)} ${esc(x.K.name)} · ${esc(x.B.name||'')}${opts.by?' · played by '+esc(opts.by):''}</div></div>
@@ -691,22 +718,31 @@ function tarot(field,entries,sel,meta){
 }
 function abHelp(a){return{str:'lifting, hitting, opening stubborn jars',dex:'reflexes, aim, sneaking out before breakfast',con:'toughness, hit points, hangover recovery',int:'memory, reasoning, wizard magic',wis:'gut feeling, cleric magic, knowing when to leave',cha:'charm, presence, free drinks, bard magic'}[a]}
 function draftToChar(){const D=S.draft;return{name:D.name.trim(),ancestry:D.ancestry,cls:D.cls,background:D.background,base:{...D.base},skills:[...D.skills],cantrips:[...D.cantrips],spells:[...D.spells],look:D.look,personality:D.personality,drive:D.drive,tie:D.tie,never:D.never,likes:[...D.likes],avail:D.avail,away:D.away,level:1}}
+function presetOf(){return(S.me&&S.me.preset)||{}}
+function applyPreset(D){const P=presetOf();
+  if(P.ancestry&&ANC[P.ancestry])D.ancestry=P.ancestry;
+  if(P.cls&&CLS[P.cls]&&D.cls!==P.cls){D.cls=P.cls;D.base={...CLS[P.cls].arr};D.skills=[];D.cantrips=[];D.spells=[]}
+  if(P.background&&BG[P.background])D.background=P.background;
+  if(D.ancestry&&D.background&&ANC[D.ancestry]&&BG[D.background]){const fx=new Set([...(BG[D.background].skills||[]),...(ANC[D.ancestry].skills||[])]);D.skills=D.skills.filter(x=>!fx.has(x))}
+  return D}
+function lockNote(f){const P=presetOf();return P[f]?`<p class="banner" style="margin:0">The DM has dealt you this card for your story. It stays, whatever else you change.</p>`:''}
+function lockFilter(f,obj){const P=presetOf();return Object.entries(obj).filter(([k])=>!P[f]||k===P[f])}
 function charToDraft(c,secret){return{...blankDraft(),...clone(c),secret:secret||''}}
 function viewBuild(){
-  const st=steps();if(S.step>=st.length)S.step=st.length-1;const [key]=st[S.step];const D=S.draft;
+  applyPreset(S.draft);const st=steps();if(S.step>=st.length)S.step=st.length-1;const [key]=st[S.step];const D=S.draft;
   const head=`<div style="display:grid;gap:10px"><span class="eyebrow">${ROMAN[S.step]} · ${st[S.step][1]}</span><div class="steps">${st.map((s,i)=>`<span class="${i===S.step?'now':i<S.step?'done':''}">${s[1]}</span>`).join('')}</div></div>`;
   let body='';
   if(key==='who')body=`<h2 style="font-size:1.8rem">Who are you playing?</h2><p class="muted" style="margin:0">Pick a name that sounds good shouted across a tavern, ideally by someone you owe money. You can change anything until the first session.</p>
     <label class="f">Character name<input type="text" id="b-name" data-draft="name" value="${esc(D.name)}" placeholder="Brannoc Ashfall" autocomplete="off"></label>`;
-  if(key==='anc')body=`<h2 style="font-size:1.8rem">Draw your people</h2><p class="muted" style="margin:0">Your people. It shapes your body, your senses and what your mother says about you at weddings.</p>${tarot('ancestry',Object.entries(ANC),D.ancestry,a=>Object.entries(a.bonus).map(([b,v])=>ABS[b]+' +'+v).join(' · ')+(a.speed<30?' · speed '+a.speed:''))}`;
-  if(key==='cls')body=`<h2 style="font-size:1.8rem">Draw your calling</h2><p class="muted" style="margin:0">What you do when things go wrong, which they will. New to this? Fighter and Barbarian are the simplest; Cleric and Bard keep everyone alive.</p>${tarot('cls',Object.entries(CLS),D.cls,c=>c.tags)}`;
+  if(key==='anc')body=`<h2 style="font-size:1.8rem">Draw your people</h2><p class="muted" style="margin:0">Your people. It shapes your body, your senses and what your mother says about you at weddings.</p>${lockNote('ancestry')}${tarot('ancestry',lockFilter('ancestry',ANC),D.ancestry,a=>Object.entries(a.bonus).map(([b,v])=>ABS[b]+' +'+v).join(' · ')+(a.speed<30?' · speed '+a.speed:''))}`;
+  if(key==='cls')body=`<h2 style="font-size:1.8rem">Draw your calling</h2><p class="muted" style="margin:0">What you do when things go wrong, which they will. New to this? Fighter and Barbarian are the simplest; Cleric and Bard keep everyone alive.</p>${lockNote('cls')}${tarot('cls',lockFilter('cls',CLS),D.cls,c=>c.tags)}`;
   if(key==='abil'){const A=ANC[D.ancestry];
     body=`<h2 style="font-size:1.8rem">Set your abilities</h2><p class="muted" style="margin:0">We put your best numbers where a ${CLS[D.cls].name} needs them. Tap one ability and then another to swap them. Nobody is good at everything, especially at our age.</p>
     <div class="arr">${AB.map(a=>{const b=D.base[a],bon=A.bonus[a]||0,t=b+bon;return`<button data-act="swap" data-a="${a}" class="${S.swap===a?'sel':''}"><span><b>${ABN[a]}</b><br><span class="sub">${esc(abHelp(a))}</span></span><span class="num muted">${b}${bon?' +'+bon:''}</span><span class="tot">${t}</span><span class="num" style="min-width:3ch;text-align:right">${sg(md(t))}</span></button>`}).join('')}</div>
     <div><button class="btn sm" data-act="recommend">Use the recommended spread</button></div>`}
   if(key==='skills'){const K=CLS[D.cls];const B=BG[D.background];const fixed=new Set([...(B?B.skills:[]),...(ANC[D.ancestry].skills||[])]);
     body=`<h2 style="font-size:1.8rem">Background and skills</h2><p class="muted" style="margin:0">Your life before the guild took you in. It comes with two skills, some gear and at least one regret.</p>
-    ${tarot('background',Object.entries(BG),D.background,b=>b.skills.join(' · '))}
+    ${lockNote('background')}${tarot('background',lockFilter('background',BG),D.background,b=>b.skills.join(' · '))}
     ${B?`<h3 style="font-size:1.35rem;margin-top:6px">Pick ${K.pick} class skills <span class="sub">(${D.skills.length} of ${K.pick})</span></h3>
     <div class="choices">${K.from.map(s=>{const on=D.skills.includes(s),fx=fixed.has(s);return`<button class="choice" data-act="skill" data-v="${esc(s)}" aria-pressed="${on||fx}" ${fx||(!on&&D.skills.length>=K.pick)?'disabled':''}><h3 style="font-size:1.1rem">${esc(s)}</h3><p>${esc(SKILLHELP[s])}${fx?' · already yours':''}</p></button>`}).join('')}</div>`:''}`}
   if(key==='spells'){const C=CLS[D.cls].cast;
@@ -722,7 +758,7 @@ function viewBuild(){
     ${D.avail&&D.avail!=='every'?`<div class="f">When you can't make it, your character is… <span class="h">Optional.</span><div class="row">${Object.entries(AWAY).map(([k,t])=>`<button class="chip ${D.away===k?'on':''}" data-act="away" data-v="${k}">${esc(t)}</button>`).join('')}</div></div>`:''}`;
   if(key==='done')body=`<h2 style="font-size:1.8rem">The guild will see you now, ${esc(D.name)}.</h2>
      <div class="row"><button class="btn pri" data-act="submit" id="submitbtn">${S.me&&S.me.data?'Save my changes':'Sign the guild ledger'}</button><button class="btn sm" data-act="restart">${S.armed==='restart'?'Tap again to start over':'Start over'}</button></div>
-     ${sheetHTML(draftToChar(),{secret:D.secret})}`;
+     ${sheetHTML(draftToChar(),{secret:D.secret,gifts:presetOf().items})}`;
   const nav=key==='done'?`<div class="navbar"><button class="btn" data-act="back">Back</button><span></span></div>`:`<div class="navbar"><button class="btn" data-act="back" ${S.step===0?'disabled':''}>Back</button><button class="btn pri" data-act="next" ${stepOk(key)?'':'disabled'} id="nextbtn">Next: ${st[S.step+1][1]}</button></div>`;
   return head+`<div style="display:grid;gap:14px">${body}</div>`+nav;
 }
@@ -753,7 +789,13 @@ async function syncArt(ids,dm){ids=[...new Set(ids.filter(Boolean))];if(!ids.len
   return changed}
 function artImg(id,cls){const a=S.art[id];return a?`<img class="${cls||''}" src="${a.data}" alt="">`:''}
 function monStatus(m){if(m.hp<=0)return'Down';const r=m.hp/m.max;if(r<=.5)return'Bloodied';if(r<1)return'Hurt';return'Unhurt'}
-function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25)}}
+function pubInit(d){const I=d.init;if(!I||!I.list||!I.list.length)return null;const vis=I.list.filter(e=>e.kind!=='mon'||(d.monsters||[]).some(m=>m.k===e.id&&m.shown));const cur=I.list[I.turn]||{};return{round:I.round||1,list:vis.map(e=>e.name),cur:cur.name||''}}
+function cxCard(c,opt){opt=opt||{};const id='cx-'+c.k;return`<div class="cx ${opt.hidden?'hidden':''} ${opt.isNew?'new':''}"><div class="face">${S.art[id]?artImg(id):`<span class="glyph">${esc((c.name||'?')[0])}</span>`}</div><div class="txt"><span class="eyebrow">${esc(c.kind||'')}</span><b>${esc(c.name)}</b>${c.blurb?`<p>${esc(c.blurb)}</p>`:''}</div></div>`}
+function viewCodex(){const L=(S.pub&&S.pub.codex)||[];
+  return`<div style="display:grid;gap:10px"><h2 style="font-size:1.6rem">The codex</h2><p class="muted" style="margin:0">Everyone and everything the guild has met so far, as far as the guild is willing to admit. New cards appear here when the DM reveals them.</p>
+   ${L.length?`<div class="cxs">${L.slice().reverse().map(c=>{const n=!S.cxSeen.has(c.k);if(n)S.cxSeen.add(c.k);return cxCard(c,{isNew:n})}).join('')}</div>`:'<div class="empty"><h2>Blank pages</h2><p>Nobody worth writing down yet. Give it ten minutes.</p></div>'}</div>`}
+function turnsHTML(I){if(!I||!I.list||!I.list.length)return'';return`<div style="display:grid;gap:6px"><span class="eyebrow">Turn order · round ${I.round}</span><div class="turns">${I.list.map(n=>`<span class="${n===I.cur?'cur':''}">${esc(n)}</span>`).join('')}</div></div>`}
+function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25),codex:(d.codex||[]).filter(c=>c.shown).sort((a,b)=>(a.at||0)-(b.at||0)).map(c=>({k:c.k,name:c.name,kind:c.kind||'',blurb:c.blurb||'',art:'cx-'+c.k})),init:pubInit(d)}}
 /* ---------- live HP, conditions, slots ---------- */
 function liveOf(c,l){const x=derive(c);l=l||{};const max=x.hpMax;return{x,max,hp:l.hp==null?max:Math.max(0,Math.min(max,+l.hp)),tmp:Math.max(0,+l.tmp||0),conds:l.conds||[],slots:l.slots||[],res:l.res||{}}}
 function rawLive(L){return{hp:L.hp,tmp:L.tmp,conds:L.conds,slots:L.slots,res:L.res}}
@@ -774,6 +816,14 @@ function trackerHTML(c,live,id){const L=liveOf(c,live),h=hpLine(L),x=L.x;
    <div class="f">Conditions ${condCtl(id,L)}</div>${slots}${res}
    <div class="row"><button class="btn sm" data-act="lrest" data-id="${esc(id)}" data-v="short">Short rest</button><button class="btn sm" data-act="lrest" data-id="${esc(id)}" data-v="long">${S.armed==='long'+id?'Tap again: full rest':'Long rest'}</button></div>
    <p class="sub" style="margin:0">The DM and the table see these numbers too. Lying about them is between you and your god.</p></div>`}
+function dmWhisperHTML(){const ps=(S.players||[]).filter(p=>p.data||p.label);
+  const all=[];ps.forEach(p=>(p.inbox||[]).forEach(w=>all.push({...w,who:p.data&&p.data.name?p.data.name+' ('+p.label+')':p.label})));all.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  return`<div class="panel" style="display:grid;gap:10px"><h3>Whisper to one player</h3><p class="sub" style="margin:0">Pops up on their phone only. Perfect for “what did you see in the shadows?” or “your patron whispers a bet…”.</p>
+   <div class="row"><select id="wto" aria-label="Player">${ps.map(p=>`<option value="${esc(p.id)}" ${S.wto===String(p.id)?'selected':''}>${esc(p.data&&p.data.name?p.data.name+' ('+p.label+')':p.label)}</option>`).join('')}</select></div>
+   <textarea id="wtext" rows="2" placeholder="You notice the priest is staring at your trousers. What do you do?"></textarea>
+   <div><button class="btn pri sm" data-act="wsenddm">Whisper</button></div>
+   ${all.length?`<div class="wlist">${all.slice(0,8).map(w=>`<div><span class="sub">To ${esc(w.who)}</span><p style="margin:2px 0">${esc(w.text)}</p>${w.rat?(w.reply?`<p style="margin:0;color:var(--accent)">“${esc(w.reply)}”</p>`:'<p class="sub" style="margin:0">Read, no answer.</p>'):'<p class="sub" style="margin:0">Not read yet…</p>'}</div>`).join('')}</div>`:''}</div>`}
+async function sendWhisper(id,text){if(!id||!text)return false;try{await API.dmWhisper(S.pass,id,text);S.dmInboxSig='';await pollDM();toast('Whispered. Only they can see it.');return true}catch(err){toast('That whisper did not go: '+esc(err.message));return false}}
 function dmPartyHTML(){const P=S.party||[];
   return`<div class="panel" style="display:grid;gap:10px"><div class="row" style="justify-content:space-between"><h3>The party</h3>${P.length?`<button class="btn sm" data-act="lrestall">${S.armed==='restall'?'Tap again':'Long rest for all'}</button>`:''}</div>
    ${P.length?P.map(p=>{const L=liveOf(p.data,p.live),h=hpLine(L);return`<div class="dpc"><div class="row" style="justify-content:space-between"><b>${esc(p.data.name)}</b><span class="muted">${L.hp<=0?'<span class="down">Down</span>':L.hp+' / '+L.max+' HP'}${L.tmp?' · +'+L.tmp+' temp':''} · AC ${L.x.ac}</span></div><div class="hpbar"><i class="${h.cl}" style="width:${h.w}%"></i></div>${hpCtl(p.id,false)}${condCtl(p.id,L)}</div>`}).join(''):'<p class="muted" style="margin:0">Characters appear here once players sign the ledger. Players can change their own HP too; you see it within a few seconds.</p>'}</div>`}
@@ -782,8 +832,68 @@ function viewTable(){
   const mons=(P.monsters||[]).map(m=>{const n=!S.seen.has(m.k);if(n)fresh.push(m.k);const has=!!S.art[m.art];return`<div class="mon ${has?'has-art':''} ${m.status==='Down'?'down':''} ${n?'new':''}">${has?artImg(m.art,'art'):''}<span class="st" style="color:var(--blood)">${esc(m.status)}</span>${has?'<span></span>':`<span class="glyph">${esc((m.name||'?')[0])}</span>`}<b>${esc(m.name)}</b>${m.desc?`<p>${esc(m.desc)}</p>`:''}</div>`}).join('');
   fresh.forEach(k=>S.seen.add(k));
   const sc=P.scene?`<div class="panel scene"><span class="eyebrow">Now</span><h2>${esc(P.scene.title)}</h2>${P.scene.text?`<p>${esc(P.scene.text)}</p>`:''}</div>`:`<div class="empty"><h2>The lantern is not lit yet</h2><p>The DM is still scheming. Pour yourself a drink. When the scene is set it appears here, and monsters flip onto the table when they arrive.</p></div>`;
-  return sc+partyHTML()+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
+  const cxl=((P.codex)||[]).slice(-4).reverse();
+  return sc+turnsHTML(P.init)+partyHTML()+(cxl.length&&S.tableMode?`<div style="display:grid;gap:10px"><span class="eyebrow">Lately in the codex</span><div class="cxs">${cxl.map(c=>cxCard(c)).join('')}</div></div>`:'')+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
 }
+const KINDS=['Character','Place','Thing','Foe','Faction'];
+function viewDMCodex(){const L=S.dmt.codex||[];
+  return`<div class="sgrid"><div style="display:grid;gap:14px;align-content:start">
+   <div class="panel" style="display:grid;gap:10px"><h3>Add to the codex</h3><p class="sub" style="margin:0">Entries start hidden. Reveal them when the party meets them; the card flips onto every phone and the table screen.</p>
+    <div class="row"><input type="text" id="cxname" placeholder="Brother Castus" style="flex:2;min-width:150px"><select id="cxkind" aria-label="Kind">${KINDS.map(k=>`<option>${k}</option>`).join('')}</select></div>
+    <label class="f" style="font-weight:400">What the players read<input type="text" id="cxblurb" placeholder="A polite monk with a velvet bag and silver tongs."></label>
+    <label class="f" style="font-weight:400">Your private note<input type="text" id="cxnote" placeholder="Works for the Order of Holy Restraint. Never fights; always returns."></label>
+    <div><button class="btn pri sm" data-act="cxadd">Add, hidden</button></div></div>
+   <p class="sub" style="margin:0">Tip: import a session plan under Guide and its codex cards arrive here ready to reveal.</p></div>
+   <div style="display:grid;gap:10px;align-content:start">${L.length?L.map(c=>`<div class="panel" style="display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start">${cxCard(c,{hidden:!c.shown})}
+     <div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(c.name)}</b><span class="chip ${c.shown?'on':''}">${c.shown?'Revealed':'Hidden'}</span></div>
+      <label class="f" style="font-weight:400">Players read<input type="text" value="${esc(c.blurb||'')}" data-cxf="blurb" data-k="${c.k}"></label>
+      <label class="f" style="font-weight:400">Only you see<input type="text" value="${esc(c.note||'')}" data-cxf="note" data-k="${c.k}"></label>
+      <div class="artrow"><label class="btn sm">${S.art['cx-'+c.k]?'Replace image':'Add image'}<input type="file" accept="image/*" data-art="cx-${c.k}" data-shown="${c.shown?1:0}"></label><button class="btn sm" data-act="cxprompt" data-k="${c.k}">Copy image prompt</button></div>
+      <div class="row"><button class="btn sm ${c.shown?'':'pri'}" data-act="cxshow" data-k="${c.k}">${c.shown?'Hide again':'Reveal'}</button><button class="btn sm warn" data-act="cxrm" data-k="${c.k}">${S.armed==='cx'+c.k?'Tap again':'Remove'}</button></div></div></div>`).join(''):'<div class="empty"><h2>An empty codex</h2><p>Add the people and places you plan to introduce, or import a session plan.</p></div>'}</div></div>`}
+function cxPrompt(c){return ART_STYLE+'. '+(c.kind==='Place'?'A place: ':c.kind==='Thing'?'An object: ':'A character: ')+c.name+'. '+(c.art||c.blurb||'')+' Tone of Terry Pratchett’s Discworld: comic, characterful, slightly grotesque, warm.'}
+function findPlayer(who){const w=String(who||'').toLowerCase();return(S.players||[]).find(p=>p.label.toLowerCase()===w||(p.data&&String(p.data.name||'').toLowerCase()===w))}
+const CRIB=[
+ ['How a roll works','<p>Say what you want to do. If failure is interesting, ask for a roll: d20 plus the number on their sheet. Meet or beat the target and it works.</p><p><b>Targets (DC):</b> 5 very easy · 10 easy · 15 medium · 20 hard · 25 heroic.</p>'],
+ ['Advantage and disadvantage','<p>Something helps: roll two d20s and keep the higher. Something hinders: keep the lower. They cancel out. Never stack.</p>'],
+ ['A turn in a fight','<ul><li>Everyone rolls initiative (d20 + initiative), highest goes first.</li><li>On a turn: move up to their speed, one action (attack, cast, dash, hide, help), maybe one bonus action, and one reaction per round.</li><li>Attack: d20 + attack bonus against the target’s AC. Hit? Roll damage.</li><li>A natural 20 is a critical: double the damage dice. A natural 1 just misses (and Sasho’s umbrella fires).</li></ul>'],
+ ['Dropping to 0 HP','<p>They fall unconscious. On each of their turns they roll a d20: 10 or more is a success, less is a failure. Three successes: stable. Three failures: dead. A natural 20: up with 1 HP. Any healing gets them straight back up.</p>'],
+ ['Spells','<p>Cantrips are free. Other spells use a slot (tap the pip on their phone). Spell save DC and attack bonus are on the sheet. If a spell says “concentration”, taking damage means a CON save (DC 10) to keep it.</p>'],
+ ['Rests','<p>Short rest: an hour, spend hit dice to heal, some powers come back. Long rest: a night’s sleep, everything back. The phones have buttons for both.</p>'],
+ ['When you are stuck','<ul><li>Say “Yes, and…” or “Yes, but…”. Rarely just “no”.</li><li>Ask the player: “What does that look like?” They will do half your work.</li><li>Unsure of a rule? Decide in their favour, quickly, and look it up afterwards.</li><li>Silence at the table? Something bursts through a door.</li><li>Lost the plot? Have an NPC ask the party what they are doing. Then use their answer.</li></ul>'],
+ ['Pacing','<p>Aim for a scene every 20 to 30 minutes. Fights at level 1 should last three or four rounds; if it drags, the enemies flee or surrender. End on a cliffhanger, not a whimper.</p>']];
+const GEN={first:['Hesper','Dorran','Castus','Mirelle','Grudge','Bertram','Tilly','Wenceslas','Mungo','Ottoline','Fester','Agnes','Crumb','Ludmilla','Barnaby','Ysolde'],last:['Vane','Whistlebottom','the Damp','Puddingfoot','Ironsides','of Nowhere Much','Gutterby','Lovelace','the Somewhat Holy','Crumpet','Fairweather','Two-Pints'],
+ tav:['The Drowned Bell','The Leaky Monk','The Bishop’s Elbow','The Second Wife','The Sober Goose','The Last Straw','The Unwiped Orc','The Broken Umbrella','The Mended Drum','The Gilded Rat']};
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function viewGuide(){const P=S.dmt.plan;const I=S.dmt.init;const at=S.dmt.planAt||0;const done=S.dmt.planDone||{};
+  const steps=P&&P.steps?P.steps.map((st,i)=>`<div class="gstep ${i===at?'now':''} ${i<at?'done':''}">
+    <div class="row" style="justify-content:space-between"><b>${i+1} · ${esc(st.title||'')}</b><span class="sub">${esc(st.time||'')}</span></div>
+    ${st.scene&&st.scene.title?`<div class="row"><button class="btn sm pri" data-act="gscene" data-i="${i}">Show this scene${st.mood?' ('+esc((MOODS.find(m=>m[0]===st.mood)||['',''])[1])+')':''}</button>${(st.monsters||[]).length?`<button class="btn sm" data-act="gmon" data-i="${i}">Add its monsters, hidden</button>`:''}</div>`:(st.monsters||[]).length?`<div><button class="btn sm" data-act="gmon" data-i="${i}">Add its monsters, hidden</button></div>`:''}
+    ${(st.beats||[]).length?`<ul>${st.beats.map((t,j)=>`<li><label><input type="checkbox" data-act="gbeat" data-id="${i}.${j}" ${done[i+'.'+j]?'checked':''}> <span>${esc(t)}</span></label></li>`).join('')}</ul>`:''}
+    ${(st.ask||[]).length?`<div style="display:grid;gap:6px"><span class="eyebrow">Private questions</span>${st.ask.map((q,j)=>{const pl=findPlayer(q.who);return`<div class="row" style="align-items:flex-start"><span style="flex:1;min-width:180px"><b>${esc(q.who)}:</b> ${esc(q.text)}</span><button class="btn sm" data-act="gask" data-i="${i}" data-j="${j}" ${pl?'':'disabled title="No player with that name"'}>Whisper it</button></div>`}).join('')}</div>`:''}
+    ${(st.codex||[]).length?`<div class="row"><span class="sub">Reveal:</span>${st.codex.map(k=>{const c=(S.dmt.codex||[]).find(x=>x.k===k);return c?`<button class="chip ${c.shown?'on':''}" data-act="cxshow" data-k="${esc(k)}">${esc(c.name)}</button>`:''}).join('')}</div>`:''}
+    ${st.tip?`<p class="sub" style="margin:0">${esc(st.tip)}</p>`:''}
+    <div class="row"><button class="btn sm" data-act="gat" data-i="${i}">${i===at?'We are here':'Jump here'}</button>${i===at&&i<P.steps.length-1?`<button class="btn sm" data-act="gat" data-i="${i+1}">Done, next step</button>`:''}</div></div>`).join(''):'';
+  const party=S.party||[];
+  const initRows=I&&I.list&&I.list.length?`<div class="init">${I.list.map((e,i)=>`<div class="row ${i===I.turn?'cur':''}" style="padding:4px 6px"><input type="number" inputmode="numeric" value="${e.n??''}" data-initn="${i}" style="width:64px;min-height:32px" aria-label="Initiative for ${esc(e.name)}"><span style="flex:1">${esc(e.name)}</span><span class="sub">${e.kind==='mon'?'foe':'party'}</span></div>`).join('')}
+    <div class="row"><button class="btn sm" data-act="isort">Sort by roll</button><button class="btn sm pri" data-act="inext">Next turn</button><span class="sub">Round ${I.round||1}</span><button class="btn sm warn" data-act="iend">End the fight</button></div></div>`:`<p class="sub" style="margin:0">Starts a list of the party and every monster on the DM page. Type in each roll, sort, then tap Next turn. The table screen shows whose turn it is.</p><div><button class="btn sm pri" data-act="istart">Start a fight</button></div>`;
+  return`<div class="sgrid"><div style="display:grid;gap:12px;align-content:start">
+   <div class="panel" style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><h3>${P?esc(P.title||'Tonight'):'Tonight’s plan'}</h3>${P?`<button class="btn sm warn" data-act="gclear">${S.armed==='gclear'?'Tap again':'Remove plan'}</button>`:''}</div>
+    ${P?'<p class="sub" style="margin:0">Work down the steps. Tick beats as you go; nobody else can see this page.</p>':'<p class="sub" style="margin:0">No plan loaded. Import one below.</p>'}</div>
+   ${steps}
+   <details class="panel"><summary style="cursor:pointer"><b>Import a session plan</b></summary><div style="display:grid;gap:8px;margin-top:8px"><p class="sub" style="margin:0">Choose the plan file Claude gave you, or paste its contents. Its codex cards are added hidden; existing ones are kept.</p>
+    <label class="btn sm" style="justify-self:start">Choose plan file<input type="file" accept=".json,application/json,text/plain" data-gfile="1"></label>
+    <textarea id="gimport" rows="4" placeholder='{"title":"Session one", "steps":[…], "codex":[…]}'></textarea><div><button class="btn sm" data-act="gimport">Import pasted plan</button></div></div></details>
+  </div><div style="display:grid;gap:12px;align-content:start">
+   <div class="panel" style="display:grid;gap:10px"><h3>Turn order</h3>${initRows}</div>
+   <div class="panel crib"><h3>Rules on one page</h3>${CRIB.map(([t,h])=>`<details><summary>${t}</summary>${h}</details>`).join('')}</div>
+   <div class="panel" style="display:grid;gap:8px"><h3>Need a name, quick?</h3><div class="row"><button class="btn sm" data-act="gname">A person</button><button class="btn sm" data-act="gtav">A tavern</button></div><p id="gout" class="num" style="margin:0;font-size:1.2rem">${esc(S.gout||'')}</p></div>
+  </div></div>`}
+function importPlan(txt){let j;try{j=JSON.parse(txt)}catch(e){toast('That is not a plan file I can read.');return}
+  if(!j||!Array.isArray(j.steps)){toast('That file has no steps in it.');return}
+  S.dmt.plan={title:String(j.title||'Tonight'),steps:j.steps.slice(0,30)};S.dmt.planAt=0;S.dmt.planDone={};
+  const cx=S.dmt.codex||[];(j.codex||[]).forEach(c=>{if(!c||!c.k||!c.name)return;if(!cx.find(x=>x.k===c.k))cx.push({k:String(c.k),name:String(c.name),kind:c.kind||'Character',blurb:c.blurb||'',note:c.note||'',art:c.art||'',shown:false})});S.dmt.codex=cx;
+  if(Array.isArray(j.scenes)&&j.scenes.length){S.dmt.presets=[...(S.dmt.presets||STARTER_SCENES),...j.scenes.filter(x=>x&&x.title)]}
+  saveDmt('Plan loaded: '+esc(S.dmt.plan.title)+'.')}
 function viewRun(){
   const d=S.dmt;const tv=location.origin+location.pathname+'?table';
   const mons=(d.monsters||[]).map(m=>`<div class="panel dmon ${m.shown?'':'hidden'}"><div class="row" style="justify-content:space-between"><h3 style="font-size:1.15rem">${esc(m.name)}</h3><span class="chip ${m.shown?'on':''}">${m.shown?'On the table':'Hidden'}</span></div>
@@ -805,6 +915,7 @@ function viewRun(){
    <div class="panel" style="display:grid;gap:6px"><h3>Table screen</h3><p class="sub" style="margin:0">Open this on a TV or a spare laptop. Players also see it under “The table” on their phones.</p><div class="link">${esc(tv)}</div><div><button class="btn sm" data-act="copy" data-url="${esc(tv)}">Copy link</button></div></div>
   </div><div style="display:grid;gap:14px;align-content:start">
    <div id="dmparty">${dmPartyHTML()}</div>
+   <div id="dmwhisper">${dmWhisperHTML()}</div>
    <div class="panel" style="display:grid;gap:10px"><h3>Bring in monsters</h3><p class="sub" style="margin:0">They arrive hidden. Tap Reveal at the dramatic moment and they flip onto everyone’s screen.</p>
     <div class="row"><select id="mon" style="flex:1;min-width:170px" aria-label="Monster">${Object.entries(MON).map(([k,m])=>`<option value="${k}">${m.name} (AC ${m.ac}, ${m.hp} HP)</option>`).join('')}</select><input type="number" id="moncount" value="1" min="1" max="12" style="width:64px" aria-label="How many"><button class="btn" data-act="emon">Add</button></div>
     <details><summary class="sub" style="cursor:pointer">Something else</summary><div class="row" style="margin-top:8px"><input type="text" id="cname" placeholder="Name" style="flex:2;min-width:140px"><input type="number" id="chp" placeholder="HP" style="width:76px"><input type="number" id="cac" placeholder="AC" style="width:76px"><button class="btn" data-act="ecustom">Add</button></div></details>
@@ -814,20 +925,30 @@ function viewRun(){
 }
 function viewPlayer(){
   if(S.me&&S.me.data&&!S.editing&&S.ptab==='table')return viewTable();
+  if(S.me&&S.me.data&&!S.editing&&S.ptab==='codex')return viewCodex();
   if(!S.token)return`<div class="empty"><h2>Members only</h2><p>The DM sends each player their own link. Open that one and your character is saved to it.</p></div>`;
   if(!S.loaded)return'<p class="banner">Loading your character…</p>';
   if(!S.me)return`<div class="empty"><h2>The doorman does not recognise you</h2><p>Ask the DM for a fresh link.</p></div>`;
-  if(S.me.data&&!S.editing)return`<div class="row" style="justify-content:space-between"><span class="eyebrow">Guild member: ${esc(S.me.label)}</span></div>`+trackerHTML(S.me.data,S.me.live,S.me.id)+(S.art['pc-'+S.me.id]?`<div class="portrait ${S.artNew.has('pc-'+S.me.id)?'new':''}">${artImg('pc-'+S.me.id)}</div>`:'')+sheetHTML(S.me.data)+`<div class="panel" style="display:grid;gap:8px"><h3>Change my mind</h3><p class="muted" style="margin:0">Opens the character builder again with your current choices filled in, so you can swap a skill, a spell or your whole backstory. Nothing changes until you sign the ledger again at the end, and you can cancel at any step. Your hit points and conditions stay as they are.</p><div><button class="btn sm" data-act="edit">Rebuild my character</button></div></div>`;
-  return(S.editing?`<div class="panel row" style="justify-content:space-between"><span class="muted" style="flex:1;min-width:180px">You are editing ${esc(S.me.data.name||'your character')}. Nothing changes until you sign again.</span><button class="btn sm" data-act="canceledit">Cancel, keep it as it was</button></div>`:'')+(S.me.data||S.step>0?'':`<div class="panel"><span class="eyebrow">Welcome to the guild, ${esc(S.me.label)}</span><p style="margin:.3em 0 0">Eight short steps to build the adventurer nobody else would hire. Nothing is final until the first session, and the DM only sees it once you sign.</p></div>`)+viewBuild();
+  if(S.me.data&&!S.editing)return`<div class="row" style="justify-content:space-between"><span class="eyebrow">Guild member: ${esc(S.me.label)}</span></div>`+trackerHTML(S.me.data,S.me.live,S.me.id)+(S.art['pc-'+S.me.id]?`<div class="portrait ${S.artNew.has('pc-'+S.me.id)?'new':''}">${artImg('pc-'+S.me.id)}</div>`:'')+sheetHTML(S.me.data,{gifts:presetOf().items})+((S.inbox||[]).length?`<details class="panel"><summary style="cursor:pointer"><b>Whispers from the DM</b> <span class="sub">(${S.inbox.length})</span></summary><div class="wlist" style="margin-top:8px">${S.inbox.slice().reverse().map(w=>`<div><p style="margin:0">${esc(w.text)}</p>${w.reply?`<p class="sub" style="margin:2px 0 0">You said: ${esc(w.reply)}</p>`:''}</div>`).join('')}</div></details>`:'')+`<div class="panel" style="display:grid;gap:8px"><h3>Change my mind</h3><p class="muted" style="margin:0">Opens the character builder again with your current choices filled in, so you can swap a skill, a spell or your whole backstory. Nothing changes until you sign the ledger again at the end, and you can cancel at any step. Your hit points and conditions stay as they are.</p><div><button class="btn sm" data-act="edit">Rebuild my character</button></div></div>`;
+  return(S.editing?`<div class="panel row" style="justify-content:space-between"><span class="muted" style="flex:1;min-width:180px">You are editing ${esc(S.me.data.name||'your character')}. Nothing changes until you sign again.</span><button class="btn sm" data-act="canceledit">Cancel, keep it as it was</button></div>`:'')+(S.me.data||S.step>0?'':`<div class="panel"><span class="eyebrow">Welcome to the guild, ${esc(S.me.label)}</span><p style="margin:.3em 0 0">Eight short steps to build the adventurer nobody else would hire. Nothing is final until the first session, and the DM only sees it once you sign.</p>${presetOf().note?`<p style="margin:.6em 0 0"><span class="eyebrow">A note from the DM</span><br>${esc(presetOf().note)}</p>`:''}</div>`)+viewBuild();
 }
 
 /* ---------- DM views ---------- */
+function dealHTML(p){const P=p.preset||{};const id=esc(p.id);const sel=(f,obj)=>`<select id="pr-${f}-${id}" aria-label="${f}"><option value="">Player chooses</option>${Object.entries(obj).map(([k,o])=>`<option value="${k}" ${P[f]===k?'selected':''}>${esc(o.name)}</option>`).join('')}</select>`;
+  const set=[P.ancestry&&ANC[P.ancestry]&&ANC[P.ancestry].name,P.cls&&CLS[P.cls]&&CLS[P.cls].name,P.background&&BG[P.background]&&BG[P.background].name].filter(Boolean);
+  return`<details class="deal" style="grid-column:1/-1"><summary class="sub" style="cursor:pointer">Deal their cards${set.length||(P.items||[]).length?': '+esc(set.join(', '))+((P.items||[]).length?' + '+P.items.length+' gift'+(P.items.length>1?'s':''):''):''}</summary>
+   <div style="display:grid;gap:8px;margin-top:8px"><p class="sub" style="margin:0">Fix anything here and the player sees only that card in the builder. Gifts always appear in their gear.</p>
+   <div class="row">${sel('ancestry',ANC)}${sel('cls',CLS)}${sel('background',BG)}</div>
+   <label class="f" style="font-weight:400">Gifts, one per line<textarea id="pr-items-${id}" rows="3" placeholder="A royal letter of reassignment">${esc((P.items||[]).join('\n'))}</textarea></label>
+   <label class="f" style="font-weight:400">A note they see at the start<input type="text" id="pr-note-${id}" value="${esc(P.note||'')}" placeholder="The guild has heard of you. Unfortunately."></label>
+   <div><button class="btn sm pri" data-act="presetsave" data-id="${id}">Save their cards</button></div></div></details>`}
 function viewDM(){
   if(!S.pass||S.err==='auth')return`<div class="panel" style="display:grid;gap:10px;max-width:420px"><h2 style="font-size:1.6rem">DM sign-in</h2>${S.err==='auth'?'<p class="down" style="margin:0">That passphrase did not work.</p>':''}<label class="f">Passphrase<input type="password" id="dmpass" autocomplete="current-password"></label><div><button class="btn pri" data-act="dmlogin">Open the DM view</button></div>${LIVE?'':'<p class="sub" style="margin:0">Demo mode: the passphrase is “dm” and everything stays on this device.</p>'}</div>`;
   const ps=S.players;
   const done=ps.filter(p=>p.data).length;
   const rows=ps.map(p=>{const c=p.data;const x=c?derive(c):null;const url=location.origin+location.pathname+'?p='+p.token;
     return`<div class="prow"><div class="who"><h3>${esc(p.label)}</h3><div class="sub">${c?esc(c.name)+' · '+esc(x.A.name)+' '+esc(x.K.name)+' · '+x.hpMax+' HP, AC '+x.ac+(c.avail&&AVAIL[c.avail]?' · '+esc(AVAIL[c.avail][0]):''):'Not sent yet'}</div><div class="link">${esc(url)}</div>${c?`<div class="artrow" style="margin-top:6px">${S.art['pc-'+p.id]?artImg('pc-'+p.id,'thumb'):''}<label class="btn sm">${S.art['pc-'+p.id]?'Replace portrait':'Add portrait'}<input type="file" accept="image/*" data-art="pc-${esc(p.id)}" data-shown="0"></label>${S.art['pc-'+p.id]?`<button class="btn sm ${(S.artIdx['pc-'+p.id]||{}).shown?'':'pri'}" data-act="reveal" data-id="pc-${esc(p.id)}">${(S.artIdx['pc-'+p.id]||{}).shown?'Hide portrait':'Reveal portrait'}</button>`:''}<button class="btn sm" data-act="prompt" data-pid="${esc(p.id)}">Copy image prompt</button></div>`:''}</div>
+      ${dealHTML(p)}
       <div class="row" style="justify-content:flex-end">${c?`<button class="btn sm" data-act="open" data-id="${esc(p.id)}">Open</button>`:''}<button class="btn sm" data-act="copy" data-url="${esc(url)}">Copy link</button><button class="btn sm warn" data-act="remove" data-id="${esc(p.id)}">${S.armed==='rm'+p.id?'Tap again':'Remove'}</button></div></div>`}).join('');
   const notes=ps.filter(p=>p.data&&(p.data.avail||p.secret||(p.data.likes&&p.data.likes.length)||p.data.drive||p.data.tie)).map(p=>`<div><b>${esc(p.data.name)}</b> <span class="sub">(${esc(p.label)})</span>${p.data.drive?`<p style="margin:2px 0">Wants: ${esc(p.data.drive)}</p>`:''}${p.data.tie?`<p style="margin:2px 0">Tie: ${esc(p.data.tie)}</p>`:''}${p.data.likes&&p.data.likes.length?`<p class="sub" style="margin:2px 0">Enjoys: ${esc(p.data.likes.join(', '))}</p>`:''}${availLine(p.data)?`<p class="sub" style="margin:2px 0">Turns up: ${esc(availLine(p.data))}</p>`:''}${p.secret?`<p class="secret" style="margin:4px 0">${esc(p.secret)}</p>`:''}</div>`).join('');
   return`<div class="row" style="justify-content:space-between"><h2 style="font-size:1.6rem">Your players</h2><span class="chip">${done} of ${ps.length} characters in</span></div>
@@ -838,22 +959,26 @@ function viewDM(){
    <div class="row"><button class="btn sm" data-act="refresh">Refresh</button><button class="btn sm" data-act="dmlogout">Sign out</button></div>`;
 }
 async function dmLoad(){try{S.players=await API.dmList(S.pass)||[];S.err=null;try{const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);await syncArt(all.map(a=>a.id),true)}catch(e){}const tb=await API.dmTableGet(S.pass);if(tb&&tb.dm&&tb.dm.scene)S.dmt=tb.dm;try{S.party=await API.partyGet()||[];S.partySig=JSON.stringify(S.party)}catch(e){}}catch(e){if(e.status===401||/passphrase|auth/i.test(e.message)){S.err='auth'}else toast('Could not reach the table: '+esc(e.message))}render()}
-function renderOverlay(){const o=$('#ov');const p=S.open&&S.players.find(p=>p.id===S.open);if(!p||!p.data){o.innerHTML='';return}
-  o.innerHTML=`<div class="ov" data-act="closebg"><div class="card" role="dialog" aria-label="${esc(p.data.name)}"><div class="ovhead"><span class="eyebrow">Character sheet</span><button class="btn sm" data-act="close">Close</button></div>${S.art['pc-'+p.id]?`<div class="portrait" style="margin-bottom:12px">${artImg('pc-'+p.id)}</div>`:''}${sheetHTML(p.data,{by:p.label,secret:p.secret})}</div></div>`}
+function pendingWhisper(){if(S.dmMode||S.tableMode||!S.inbox)return null;return S.inbox.find(w=>w.rat==null&&!S.wseen.has(w.id))||null}
+function whisperModal(w){return`<div class="ov"><div class="card whisper" role="dialog" aria-label="A whisper from the DM"><span class="eyebrow">A whisper from the DM · for your eyes only</span><p class="wtext">${esc(w.text)}</p>
+  <label class="f">Your answer <span class="h">Only the DM sees it. Keep a straight face.</span><textarea id="wreply" rows="3"></textarea></label>
+  <div class="row"><button class="btn pri" data-act="wsend" data-id="${esc(w.id)}">Send to the DM</button><button class="btn sm" data-act="wread" data-id="${esc(w.id)}">Just read it</button></div></div></div>`}
+function renderOverlay(){const o=$('#ov');const pw=pendingWhisper();if(pw){if(o.dataset.w!==pw.id){o.innerHTML=whisperModal(pw);o.dataset.w=pw.id}return}o.dataset.w='';const p=S.open&&S.players.find(p=>p.id===S.open);if(!p||!p.data){o.innerHTML='';return}
+  o.innerHTML=`<div class="ov" data-act="closebg"><div class="card" role="dialog" aria-label="${esc(p.data.name)}"><div class="ovhead"><span class="eyebrow">Character sheet</span><button class="btn sm" data-act="close">Close</button></div>${S.art['pc-'+p.id]?`<div class="portrait" style="margin-bottom:12px">${artImg('pc-'+p.id)}</div>`:''}${sheetHTML(p.data,{by:p.label,secret:p.secret,gifts:(p.preset||{}).items})}</div></div>`}
 
 /* ---------- render ---------- */
 function render(){
   $('#brand').firstChild.nodeValue=CFG.name||'The Guild of Second Chances';
   $('#role').innerHTML=LIVE?'':`<span class="sub">Demo:</span>${[['player','Player'],['dm','DM'],['table','Table screen']].map(([k,l])=>`<button class="chip ${(k==='dm'&&S.dmMode)||(k==='table'&&S.tableMode)||(k==='player'&&!S.dmMode&&!S.tableMode)?'on':''}" data-act="demo" data-v="${k}">${l}</button>`).join('')}`;
   let tabs=[];
-  if(S.dmMode&&S.pass&&S.err!=='auth')tabs=[['players','Players'],['run','Run the table']];
-  else if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data&&!S.editing)tabs=[['me','My character'],['table','The table']];
+  if(S.dmMode&&S.pass&&S.err!=='auth')tabs=[['players','Players'],['run','Run the table'],['codex','Codex'],['guide','Guide']];
+  else if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data&&!S.editing)tabs=[['me','My character'],['table','The table'],['codex','Codex']];
   const cur=S.dmMode?S.dtab:S.ptab;
   $('#tabs').innerHTML=tabs.map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-current="${cur===k}">${l}</button>`).join('');
   document.body.classList.toggle('tv',S.tableMode);
   const showMood=S.tableMode||(!S.dmMode&&S.me&&S.me.data&&!S.editing);
   setMood(showMood&&S.pub&&S.pub.scene?S.pub.scene.mood||'':'');
-  const body=S.tableMode?viewTable():S.dmMode?(S.dtab==='run'&&S.pass&&S.err!=='auth'?viewRun():viewDM()):viewPlayer();
+  const dmIn=S.pass&&S.err!=='auth';const body=S.tableMode?viewTable():S.dmMode?(dmIn&&S.dtab==='run'?viewRun():dmIn&&S.dtab==='codex'?viewDMCodex():dmIn&&S.dtab==='guide'?viewGuide():viewDM()):viewPlayer();
   $('#main').innerHTML='<section class="view">'+body+'</section>';
   renderOverlay();
 }
@@ -862,6 +987,10 @@ function render(){
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.draft){S.draft[t.dataset.draft]=t.value;saveDraft();const nb=$('#nextbtn');if(nb)nb.disabled=!stepOk(steps()[S.step][0])}});
 document.addEventListener('change',async e=>{const f=e.target;if(!f.dataset||!f.dataset.art||!f.files||!f.files[0])return;
   toast('Uploading…');try{const data=await compressImage(f.files[0]);await API.dmArtPut(S.pass,f.dataset.art,data,f.dataset.shown==='1');S.art[f.dataset.art]={v:'local'+Date.now(),data};const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);if(S.dtab==='run')saveDmt();else render();toast(f.dataset.shown==='1'?'Image added.':'Portrait added. It stays hidden until you tap Reveal.')}catch(err){toast('That image did not upload: '+esc(err.message))}});
+document.addEventListener('change',e=>{const t=e.target,d=t.dataset||{};
+  if(d.cxf){const c=(S.dmt.codex||[]).find(x=>x.k===d.k);if(c){c[d.cxf]=t.value.trim();saveDmt()}return}
+  if(d.initn!=null&&S.dmt.init){const en=S.dmt.init.list[+d.initn];if(en){en.n=t.value===''?null:+t.value;const dm=clone(S.dmt),pub=pubFrom(dm);dq=dq.then(()=>API.dmTableSet(S.pass,dm,pub)).catch(()=>{})}return}
+  if(d.gfile&&t.files&&t.files[0]){const r=new FileReader();r.onload=()=>importPlan(String(r.result));r.readAsText(t.files[0]);return}});
 document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.mdesc;if(!k)return;const m=S.dmt.monsters.find(x=>x.k===k);if(m){m.desc=e.target.value.trim();saveDmt()}});
 let dq=Promise.resolve();
 function saveDmt(msg){render();if(msg)toast(msg);const dm=clone(S.dmt),pub=pubFrom(dm);dq=dq.then(()=>API.dmTableSet(S.pass,dm,pub)).catch(e=>toast('The table did not update: '+esc(e.message)))}
@@ -895,7 +1024,7 @@ function fxTick(t){
 async function pollTable(force){
   if(document.hidden&&!force)return;
   const on=S.tableMode||(!S.dmMode&&S.me&&S.me.data&&!S.editing);if(!on)return;
-  try{const r=await API.tableGet();const pub=(r&&r.pub)||{};const sig=JSON.stringify(pub);let ch=false;if(sig!==S.pubSig){S.pubSig=sig;S.pub=pub;ch=true}const ids=(pub.monsters||[]).map(m=>m.art);if(S.me&&S.me.id)ids.push('pc-'+S.me.id);if(await syncArt(ids,false))ch=true;if(ch)render();S.artNew.clear()}catch(e){}
+  try{const r=await API.tableGet();const pub=(r&&r.pub)||{};const sig=JSON.stringify(pub);let ch=false;if(sig!==S.pubSig){S.pubSig=sig;S.pub=pub;ch=true}const ids=[...(pub.monsters||[]).map(m=>m.art),...(pub.codex||[]).map(c=>c.art)];if(S.me&&S.me.id)ids.push('pc-'+S.me.id);if(await syncArt(ids,false))ch=true;if(ch&&!busy())render();S.artNew.clear()}catch(e){}
 }
 setInterval(pollTable,4000);
 function busy(){const a=document.activeElement;return a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='file'}
@@ -906,7 +1035,17 @@ async function pollParty(){if(document.hidden)return;
     if(!S.dmMode&&S.me&&!(S.liveEdit[S.me.id]&&Date.now()-S.liveEdit[S.me.id]<6000)){const me=got.find(p=>p.id===S.me.id);if(me)S.me.live=me.live}
     if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data){const ids=got.map(p=>'pc-'+p.id);await syncArt(ids,false)}else if(S.tableMode)await syncArt(got.map(p=>'pc-'+p.id),false);
     if(dmRun){const box=$('#dmparty');if(box&&!box.contains(document.activeElement))box.innerHTML=dmPartyHTML()}else if(!busy())render()}catch(e){}}
-setInterval(pollParty,4000);setTimeout(pollParty,700);
+setInterval(pollParty,4000);
+async function pollInbox(){if(document.hidden||S.dmMode||S.tableMode||!S.token||!S.me)return;
+  try{const ib=await API.myInbox(S.token)||[];const sig=JSON.stringify(ib);if(sig===S.inboxSig)return;const had=S.inboxSig;S.inboxSig=sig;S.inbox=ib;
+    if(had&&pendingWhisper()&&navigator.vibrate)try{navigator.vibrate([120,60,120])}catch(e){}
+    if(pendingWhisper())renderOverlay();else if(!busy())render()}catch(e){}}
+setInterval(pollInbox,4000);setTimeout(pollInbox,900);
+async function pollDM(){if(document.hidden||!S.dmMode||!S.pass||S.err==='auth')return;
+  try{const ps=await API.dmList(S.pass)||[];const sig=JSON.stringify(ps.map(p=>p.inbox||[]));if(sig===S.dmInboxSig)return;const first=!S.dmInboxSig;S.dmInboxSig=sig;
+    ps.forEach(n=>{const o=S.players.find(p=>p.id===n.id);if(o)o.inbox=n.inbox;else S.players.push(n)});
+    const box=$('#dmwhisper');if(box&&!box.contains(document.activeElement))box.innerHTML=dmWhisperHTML();if(!first)toast('A player has answered a whisper.')}catch(e){}}
+setInterval(pollDM,6000);setTimeout(pollParty,700);
 const liveQ={};
 function setLive(id,fn){const dm=S.dmMode;let rec=dm?(S.party||[]).find(p=>p.id===id):(S.me&&S.me.id===id?S.me:null);if(!rec||!rec.data)return;
   const L=liveOf(rec.data,rec.live);fn(L,rec);rec.live=rawLive(L);
@@ -919,10 +1058,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='dmpas
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
   if(a==='closebg'&&e.target!==b)return;
-  if(!['remove','restart','lrest','lrestall'].includes(a))S.armed=null;
+  if(!['remove','restart','lrest','lrestall','cxrm','gclear'].includes(a))S.armed=null;
   const rr=()=>render();
   switch(a){
-  case'pick':{const f=b.dataset.f,v=b.dataset.v;S.draft[f]=v;if(f==='cls'){S.draft.base={...CLS[v].arr};S.draft.skills=[];S.draft.cantrips=[];S.draft.spells=[]}if(f==='background'||f==='ancestry'){const fx=new Set([...((BG[S.draft.background]||{}).skills||[]),...((ANC[S.draft.ancestry]||{}).skills||[])]);S.draft.skills=S.draft.skills.filter(s=>!fx.has(s))}saveDraft();rr();break}
+  case'pick':{const f=b.dataset.f,v=b.dataset.v;if(!S.dmMode&&presetOf()[f]&&presetOf()[f]!==v)break;S.draft[f]=v;if(f==='cls'){S.draft.base={...CLS[v].arr};S.draft.skills=[];S.draft.cantrips=[];S.draft.spells=[]}if(f==='background'||f==='ancestry'){const fx=new Set([...((BG[S.draft.background]||{}).skills||[]),...((ANC[S.draft.ancestry]||{}).skills||[])]);S.draft.skills=S.draft.skills.filter(s=>!fx.has(s))}saveDraft();rr();break}
   case'swap':{const x=b.dataset.a;if(!S.swap)S.swap=x;else{if(S.swap!==x){const t=S.draft.base[S.swap];S.draft.base[S.swap]=S.draft.base[x];S.draft.base[x]=t;saveDraft()}S.swap=null}rr();break}
   case'recommend':S.draft.base={...CLS[S.draft.cls].arr};saveDraft();rr();break;
   case'skill':case'spell':{const f=a==='skill'?'skills':b.dataset.f,v=b.dataset.v,L=S.draft[f];S.draft[f]=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();rr();break}
@@ -934,6 +1073,30 @@ document.addEventListener('click',async e=>{
   case'lrest':{const id=b.dataset.id,v=b.dataset.v;if(v==='long'&&S.armed!=='long'+id){S.armed='long'+id;if(S.dmMode){const box=$('#dmparty');if(box)box.innerHTML=dmPartyHTML()}else rr();break}S.armed=null;
     setLive(id,L=>{if(v==='long'){L.hp=L.max;L.tmp=0;L.slots=[];L.res={};L.conds=L.conds.filter(c=>c!=='Unconscious')}else{const r={...L.res};L.x.res.forEach(x=>{if(x.rest==='short')r[x.key]=0});L.res=r;if(L.x.K.cast&&L.x.K.cast.pact)L.slots=[]}});toast(v==='long'?'A full night’s sleep. Everything is back, including your dignity, mostly.':'A short rest. Short-rest powers are back.');break}
   case'lrestall':{if(S.armed!=='restall'){S.armed='restall';const box=$('#dmparty');if(box)box.innerHTML=dmPartyHTML();break}S.armed=null;(S.party||[]).forEach(p=>setLive(p.id,L=>{L.hp=L.max;L.tmp=0;L.slots=[];L.res={};L.conds=L.conds.filter(c=>c!=='Unconscious')}));toast('Everyone sleeps it off.');break}
+  case'presetsave':{const id=b.dataset.id,g=f=>{const e=document.getElementById('pr-'+f+'-'+id);return e?e.value.trim():''};
+    const pr={ancestry:g('ancestry'),cls:g('cls'),background:g('background'),items:g('items').split('\n').map(x=>x.trim()).filter(Boolean).slice(0,12),note:g('note').slice(0,300)};Object.keys(pr).forEach(k=>{if(!pr[k]||(Array.isArray(pr[k])&&!pr[k].length))delete pr[k]});
+    try{await API.dmSetPreset(S.pass,id,pr);const p=S.players.find(x=>String(x.id)===id);if(p)p.preset=pr;toast('Saved. They see it next time they open their link.');rr()}catch(err){toast('Could not save: '+esc(err.message))}break}
+  case'wsend':case'wread':{const id=b.dataset.id,txt=a==='wsend'?(($('#wreply')||{}).value||'').trim():'';if(a==='wsend'&&!txt){$('#wreply')&&$('#wreply').focus();break}
+    S.wseen.add(id);b.disabled=true;try{await API.inboxReply(S.token,id,txt);S.inbox=(S.inbox||[]).map(w=>w.id===id?{...w,reply:txt,rat:new Date().toISOString()}:w);S.inboxSig=JSON.stringify(S.inbox);if(txt)toast('Sent. Only the DM can see it.')}catch(err){toast('That did not send: '+esc(err.message))}
+    $('#ov').dataset.w='';render();break}
+  case'wsenddm':{const id=($('#wto')||{}).value,t=(($('#wtext')||{}).value||'').trim();if(!t){$('#wtext')&&$('#wtext').focus();break}S.wto=id;if(await sendWhisper(id,t)){const box=$('#dmwhisper');if(box)box.innerHTML=dmWhisperHTML()}break}
+  case'cxadd':{const nm=$('#cxname').value.trim();if(!nm)break;(S.dmt.codex=S.dmt.codex||[]).push({k:'c'+Math.random().toString(36).slice(2,9),name:nm,kind:$('#cxkind').value,blurb:$('#cxblurb').value.trim(),note:$('#cxnote').value.trim(),shown:false});saveDmt('Added, hidden.');break}
+  case'cxshow':{const c=(S.dmt.codex||[]).find(x=>x.k===b.dataset.k);if(!c)break;c.shown=!c.shown;if(c.shown)c.at=Date.now();const id='cx-'+c.k;if(S.artIdx[id]){try{await API.dmArtShow(S.pass,id,c.shown);S.artIdx[id]={...S.artIdx[id],shown:c.shown}}catch(e){}}saveDmt(c.shown?esc(c.name)+' is in everyone’s codex now.':null);break}
+  case'cxrm':{const k=b.dataset.k;if(S.armed!=='cx'+k){S.armed='cx'+k;rr();break}S.armed=null;S.dmt.codex=(S.dmt.codex||[]).filter(x=>x.k!==k);try{await API.dmArtDel(S.pass,'cx-'+k)}catch(e){}saveDmt();break}
+  case'cxprompt':{const c=(S.dmt.codex||[]).find(x=>x.k===b.dataset.k);if(!c)break;const t=cxPrompt(c);try{await navigator.clipboard.writeText(t);toast('Prompt copied.')}catch(err){toast(esc(t),15000)}break}
+  case'gscene':{const st=S.dmt.plan.steps[+b.dataset.i];if(!st||!st.scene)break;S.dmt.scene={title:st.scene.title,text:st.scene.text||'',mood:st.mood||''};S.dmt.planAt=+b.dataset.i;saveDmt('The table can see the scene.');break}
+  case'gmon':{const st=S.dmt.plan.steps[+b.dataset.i];if(!st)break;(st.monsters||[]).forEach(o=>{if(o.key&&MON[o.key]){const m=MON[o.key];const n=Math.min(12,Math.max(1,+o.n||1));const same=S.dmt.monsters.filter(x=>x.base===o.key).length;for(let i=0;i<n;i++)S.dmt.monsters.push({k:'m'+Math.random().toString(36).slice(2,9),base:o.key,name:(o.name||m.name)+(n>1||same?' '+(same+i+1):''),hp:o.hp||m.hp,max:o.hp||m.hp,ac:m.ac,atk:m.atk,note:o.note||m.note,desc:o.desc||'',shown:false})}else if(o.name){const hp=+o.hp||10;S.dmt.monsters.push({k:'m'+Math.random().toString(36).slice(2,9),name:o.name,hp,max:hp,ac:+o.ac||12,atk:o.atk||[],note:o.note||'',desc:o.desc||'',shown:false})}});saveDmt('Added, hidden. Reveal them from Run the table.');break}
+  case'gbeat':{const d=S.dmt.planDone=S.dmt.planDone||{};d[b.dataset.id]=b.checked;const dm=clone(S.dmt),pub=pubFrom(dm);dq=dq.then(()=>API.dmTableSet(S.pass,dm,pub)).catch(()=>{});return}
+  case'gat':S.dmt.planAt=+b.dataset.i;saveDmt();break;
+  case'gask':{const q=((S.dmt.plan.steps[+b.dataset.i]||{}).ask||[])[+b.dataset.j];const pl=q&&findPlayer(q.who);if(!pl)break;b.disabled=true;await sendWhisper(pl.id,q.text);b.textContent='Whispered';break}
+  case'gimport':importPlan($('#gimport').value);break;
+  case'gclear':if(S.armed!=='gclear'){S.armed='gclear';rr();break}S.armed=null;S.dmt.plan=null;saveDmt();break;
+  case'gname':S.gout=pick(GEN.first)+' '+pick(GEN.last);rr();break;
+  case'gtav':S.gout=pick(GEN.tav);rr();break;
+  case'istart':{const list=[...(S.party||[]).map(p=>({id:p.id,name:p.data.name,kind:'pc',n:null})),...S.dmt.monsters.filter(m=>m.hp>0).map(m=>({id:m.k,name:m.name,kind:'mon',n:null}))];if(!list.length){toast('Nobody to fight yet.');break}S.dmt.init={list,turn:0,round:1};saveDmt('Ask everyone to roll initiative.');break}
+  case'isort':{const I=S.dmt.init;if(!I)break;I.list.sort((a,b)=>(+b.n||0)-(+a.n||0));I.turn=0;saveDmt();break}
+  case'inext':{const I=S.dmt.init;if(!I)break;I.turn++;if(I.turn>=I.list.length){I.turn=0;I.round=(I.round||1)+1}saveDmt();break}
+  case'iend':S.dmt.init=null;saveDmt('Fight over. Breathe.');break;
   case'avail':{S.draft.avail=b.dataset.v;saveDraft();rr();break}
   case'away':{S.draft.away=S.draft.away===b.dataset.v?'':b.dataset.v;saveDraft();rr();break}
   case'like':{const v=b.dataset.v,L=S.draft.likes;S.draft.likes=L.includes(v)?L.filter(s=>s!==v):[...L,v];saveDraft();b.classList.toggle('on');break}
@@ -954,7 +1117,7 @@ document.addEventListener('click',async e=>{
   case'demo':{const v=b.dataset.v;S.dmMode=v==='dm';S.tableMode=v==='table';S.open=null;
     if(v==='player'){const s=demo.load();if(!S.token||!s.players.find(p=>p.token===S.token)){if(!s.players.length){s.players.push({token:'demo'+Math.random().toString(36).slice(2,8),label:'Demo player'});demo.save(s)}S.token=s.players[0].token;lsSet('wt2.token',S.token)}S.me=await API.me(S.token);S.loaded=true;S.draft=lsGet(draftKey(),null)||blankDraft();S.step=0}
     if(v==='dm'&&S.pass)await dmLoad();if(v==='table')await pollTable(true);window.scrollTo(0,0);rr();break}
-  case'tab':if(S.dmMode){S.dtab=b.dataset.t;if(S.dtab==='run')setTimeout(pollParty,50)}else{S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true);setTimeout(pollParty,50)}window.scrollTo(0,0);rr();break;
+  case'tab':if(S.dmMode){S.dtab=b.dataset.t;if(S.dtab==='run'||S.dtab==='guide')setTimeout(pollParty,50)}else{S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true);setTimeout(pollParty,50)}window.scrollTo(0,0);rr();break;
   case'sceneset':S.dmt.scene={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};S.moodPick=null;saveDmt('The table can see the scene.');break;
   case'moodpick':{S.dmt.scene.title=$('#stitle').value;S.dmt.scene.text=$('#stext').value;S.moodPick=b.dataset.v;rr();break}
   case'scenesave':{const s={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};if(!s.title)break;const L=S.dmt.presets||clone(STARTER_SCENES);S.dmt.presets=[s,...L.filter(x=>x.title!==s.title)].slice(0,30);saveDmt('Saved as a preset.');break}
