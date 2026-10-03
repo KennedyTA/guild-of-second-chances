@@ -305,6 +305,7 @@ body.tv .cxs{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .cx.pal-burgundy{border-color:var(--blood);background:linear-gradient(#3A1C2A,#140E1E)}.cx.pal-burgundy .glyph{border-color:var(--blood);color:var(--blood)}.cx.pal-burgundy .eyebrow{color:var(--blood)}
 .cx.pal-teal{border-color:#5FA8A0;background:linear-gradient(#123A40,#0B1E24)}.cx.pal-green{border-color:#C08A55;background:linear-gradient(#1C3A28,#0E1E16)}
 .cx.pal-ivory{border-color:#E8D9A8;background:linear-gradient(#3B3628,#1E1B14)}.cx.pal-violet{border-color:#B8B4E0;background:linear-gradient(#2A2350,#130F2A)}
+.monart{display:grid;gap:8px}.monart-i{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center}.monart-i .thumb{width:56px;height:84px;object-fit:cover;border-radius:6px}.monart-i .ph{border:1px dashed currentColor;opacity:.3}.monart-i .btn{margin-top:4px}
 </style>
 </head>
 <body>
@@ -849,7 +850,8 @@ function viewDMCodex(){const L=S.dmt.codex||[];
     <label class="f" style="font-weight:400">What the players read<input type="text" id="cxblurb" placeholder="A polite monk with a velvet bag and silver tongs."></label>
     <label class="f" style="font-weight:400">Your private note<input type="text" id="cxnote" placeholder="Works for the Order of Holy Restraint. Never fights; always returns."></label>
     <div><button class="btn pri sm" data-act="cxadd">Add, hidden</button></div></div>
-   <p class="sub" style="margin:0">Tip: import a session plan under Guide and its codex cards arrive here ready to reveal.</p></div>
+   <p class="sub" style="margin:0">Tip: import a session plan under Guide and its codex cards arrive here ready to reveal.</p>
+   ${monArtPanel()}</div>
    <div style="display:grid;gap:10px;align-content:start">${L.length?L.map(c=>`<div class="panel" style="display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start">${cxCard(c,{hidden:!c.shown})}
      <div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(c.name)}</b><span class="chip ${c.shown?'on':''}">${c.shown?'Revealed':'Hidden'}</span></div>
       <label class="f" style="font-weight:400">Players read<input type="text" value="${esc(c.blurb||'')}" data-cxf="blurb" data-k="${c.k}"></label>
@@ -857,6 +859,11 @@ function viewDMCodex(){const L=S.dmt.codex||[];
       <label class="f" style="font-weight:400">Card palette<select data-cxf="pal" data-k="${c.k}">${Object.entries(PALETTES).map(([k,[l]])=>`<option value="${k}" ${cxPal(c)===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
       <div class="artrow"><label class="btn sm">${S.art['cx-'+c.k]?'Replace image':'Add image'}<input type="file" accept="image/*" data-art="cx-${c.k}" data-shown="${c.shown?1:0}"></label><button class="btn sm" data-act="cxprompt" data-k="${c.k}">Copy image prompt</button></div>
       <div class="row"><button class="btn sm ${c.shown?'':'pri'}" data-act="cxshow" data-k="${c.k}">${c.shown?'Hide again':'Reveal'}</button><button class="btn sm warn" data-act="cxrm" data-k="${c.k}">${S.armed==='cx'+c.k?'Tap again':'Remove'}</button></div></div></div>`).join(''):'<div class="empty"><h2>An empty codex</h2><p>Add the people and places you plan to introduce, or import a session plan.</p></div>'}</div></div>`}
+function monAliases(){const a={};const P=S.dmt.plan;((P&&P.steps)||[]).forEach(st=>(st.monsters||[]).forEach(m=>{if(m.key&&MON[m.key]&&m.name&&m.name!==MON[m.key].name){(a[m.key]=a[m.key]||new Set).add(m.name)}}));return a}
+function monArtPanel(){const al=monAliases();
+  return`<div class="panel" style="display:grid;gap:10px"><h3>Monster pictures</h3><p class="sub" style="margin:0">Add these before the game. Each picture belongs to that kind of monster, so every one you put into a fight shows it on the table screen once you reveal the fight.</p>
+   <div class="monart">${Object.entries(MON).map(([k,m])=>{const id='mon-'+k;const has=!!S.art[id];const nick=al[k]?[...al[k]].join(', '):'';
+    return`<div class="monart-i">${has?artImg(id,'thumb'):'<div class="thumb ph"></div>'}<div style="min-width:0"><b style="display:block">${esc(m.name)}</b>${nick?`<div class="sub">Tonight: ${esc(nick)}</div>`:''}<label class="btn sm">${has?'Replace':'Add image'}<input type="file" accept="image/*" data-art="${id}" data-shown="1"></label></div></div>`}).join('')}</div></div>`}
 function cxPrompt(c){return artStyle(cxPal(c))+'. '+(c.kind==='Place'?'A place: ':c.kind==='Thing'?'An object: ':'A character: ')+c.name+'. '+(c.art||c.blurb||'')+' Tone of Terry Pratchett’s Discworld: comic, characterful, slightly grotesque, warm.'}
 function findPlayer(who){const w=String(who||'').toLowerCase();return(S.players||[]).find(p=>p.label.toLowerCase()===w||(p.data&&String(p.data.name||'').toLowerCase()===w))}
 const CRIB=[
