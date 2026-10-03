@@ -559,6 +559,12 @@ function derive(c){
   return {A,K,B,lvl,prof,sc,m,skills,saves,hpMax,ac,init:m.dex,speed:A.speed,attacks,cast,res,feats,pp,breathDC};
 }
 function hpState(hp,max){if(hp<=0)return['Down','down'];const r=hp/max;if(r<=.5)return['Bloodied','low'];if(r<1)return['Hurt','mid'];return['Unhurt','']}
+/* guild backgrounds, made for this table */
+Object.assign(BG,{
+ pitusher:{name:'Pit Usher',blurb:'Seated the crowds at a fighting pit, took the bets and swept up the teeth. Has seen every kind of fight and most kinds of nudity.',skills:['Intimidation','Sleight of Hand'],gear:['Usher’s lantern','Stained waistcoat','A pouch of other people’s teeth','A bundle of losing bet slips'],gold:15,feat:'Ringside: every fighting pit, gambling den and back-alley brawl knows your face and lets you in, usually through the back.'},
+ gambler:{name:'Gambler',blurb:'Lives by the dice and dies a little with every roll. Has bet things that should never be bet.',skills:['Deception','Insight'],gear:['Loaded dice','A marked deck','An IOU you would rather not discuss','A very fine umbrella (structurally doomed)'],gold:5,feat:'A seat at every table: in any tavern you can find a game, and someone who owes you a favour, or the other way round.'},
+ royalguard:{name:'Royal Guard',blurb:'Served the crown in polished armour. Knows the palace, its corridors and several of its secrets.',skills:['Athletics','Insight'],gear:['Tabard with the royal crest','Guard’s whistle','A ring of keys to doors you should not open','Common clothes'],gold:15,feat:'Palace access: guards and servants of the crown answer your questions and let you through most doors.'},
+ stargazer:{name:'Stargazer',blurb:'Reads the heavens for everyone else. Has never once checked her own chart.',skills:['Arcana','Insight'],gear:['Star chart','Brass spyglass','Ink for drawing on skin','A candle that never quite goes out'],gold:10,feat:'Read the sky: once a session, ask the DM one question about what is coming. The answer is true, and annoyingly poetic.'}});
 /* warlock: pact magic, slots come back on a short rest */
 Object.assign(SPELLS,{
  'Eldritch Blast':{l:0,t:'Ranged spell attack, 120 ft. 1d10 force. The warlock’s signature move.',atk:1,d:'1d10'},
@@ -676,7 +682,7 @@ function stepOk(key){const D=S.draft;const K=CLS[D.cls];
   if(key==='who')return!!D.name.trim();if(key==='anc')return!!D.ancestry;if(key==='cls')return!!D.cls;
   if(key==='skills')return!!D.background&&D.skills.length===K.pick;
   if(key==='spells')return D.cantrips.length===K.cast.cantrips&&D.spells.length===K.cast.spells;if(key==='story')return!!D.avail;return true}
-const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII'];
 const SIG={warlock:'eye',fighter:'sword',rogue:'dagger',wizard:'star',barbarian:'axe',bard:'lute',cleric:'sun',paladin:'shield',ranger:'bow'};
 function tarot(field,entries,sel,meta){
   const cur=entries.find(e=>e[0]===sel);
