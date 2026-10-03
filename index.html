@@ -302,6 +302,9 @@ body.tv .cxs{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .crib details{border-top:1px solid var(--line);padding:6px 0}.crib summary{cursor:pointer;font-weight:700}
 .crib p,.crib li{margin:.3em 0;font-size:.95rem}
 .turns{display:flex;gap:6px;flex-wrap:wrap}.turns span{border:1px solid var(--line);border-radius:999px;padding:2px 10px}.turns span.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
+.cx.pal-burgundy{border-color:var(--blood);background:linear-gradient(#3A1C2A,#140E1E)}.cx.pal-burgundy .glyph{border-color:var(--blood);color:var(--blood)}.cx.pal-burgundy .eyebrow{color:var(--blood)}
+.cx.pal-teal{border-color:#5FA8A0;background:linear-gradient(#123A40,#0B1E24)}.cx.pal-green{border-color:#C08A55;background:linear-gradient(#1C3A28,#0E1E16)}
+.cx.pal-ivory{border-color:#E8D9A8;background:linear-gradient(#3B3628,#1E1B14)}.cx.pal-violet{border-color:#B8B4E0;background:linear-gradient(#2A2350,#130F2A)}
 </style>
 </head>
 <body>
@@ -772,10 +775,13 @@ const STARTER_SCENES=[
  {title:'A cellar that should not be this big',text:'Barrels, cobwebs and a smell that has opinions. Somewhere below, something is humming a sea shanty, badly.',mood:'cellar'},
  {title:'The Whispering Wood',text:'The trees lean in to listen. Little lights drift between them, and not all of them are fireflies.',mood:'forest'}];
 /* ---------- art ---------- */
+const PALETTES={navy:['Lanternford and the guild','deep navy and antique gold palette'],burgundy:['Enemies','deep burgundy and tarnished gold palette with blood-red accents, menacing shadows'],teal:['Under the river','deep teal and verdigris bronze palette, drowned and glimmering'],green:['Forests and wilds','deep forest green and burnished copper palette, mossy and moonlit'],ivory:['The palace and court','ivory, cream and bright gold palette, opulent and slightly decadent'],violet:['Magic and the stars','midnight violet and silver palette, starlit and uncanny']};
+function artStyle(pal){return ART_STYLE.replace('deep navy and antique gold palette',(PALETTES[pal]||PALETTES.navy)[1])}
+function cxPal(c){return c.pal||(c.kind==='Foe'?'burgundy':'navy')}
 const ART_STYLE='Tarot card illustration, art nouveau line work, deep navy and antique gold palette, ornate gold frame with subtle Celtic knotwork in the corners, painterly, warm candlelight, witty and a little roguish, not photorealistic, no text or lettering, portrait orientation 2:3, 1024 x 1536 px';
 function pcPrompt(c){const x=derive(c);const B=BG[c.background]||{};const w=x.K.attacks[0].n.replace(/ \(.*\)/,'').toLowerCase();
   return ART_STYLE+'. Subject: '+c.name+', a '+x.A.name.toLowerCase()+' '+x.K.name.toLowerCase()+', seasoned and well past thirty, once a '+(B.name||'wanderer').toLowerCase()+'. '+(c.look?'Notable: '+c.look+'. ':'')+(c.personality?'Attitude: '+c.personality+'. ':'')+'Carrying a '+w+'. Real-life likeness: [describe the player here: build, hair, face, signature style].'}
-function monPrompt(m){return ART_STYLE+'. A '+m.name.replace(/ \d+$/,'').toLowerCase()+', a menacing but slightly comic fantasy foe'+(m.desc?', '+m.desc:'')+'. Deep crimson accents.'}
+function monPrompt(m){return artStyle(m.pal||'burgundy')+'. A '+m.name.replace(/ \d+$/,'').toLowerCase()+', a menacing but slightly comic fantasy foe'+(m.desc?', '+m.desc:'')+'. Deep crimson accents.'}
 function monArtId(m){return'mon-'+(m.base||m.k)}
 async function compressImage(file){const bmp=await createImageBitmap(file);const s=Math.min(1,900/Math.max(bmp.width,bmp.height));const c=document.createElement('canvas');c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
 async function syncArt(ids,dm){ids=[...new Set(ids.filter(Boolean))];if(!ids.length)return false;
@@ -790,12 +796,12 @@ async function syncArt(ids,dm){ids=[...new Set(ids.filter(Boolean))];if(!ids.len
 function artImg(id,cls){const a=S.art[id];return a?`<img class="${cls||''}" src="${a.data}" alt="">`:''}
 function monStatus(m){if(m.hp<=0)return'Down';const r=m.hp/m.max;if(r<=.5)return'Bloodied';if(r<1)return'Hurt';return'Unhurt'}
 function pubInit(d){const I=d.init;if(!I||!I.list||!I.list.length)return null;const vis=I.list.filter(e=>e.kind!=='mon'||(d.monsters||[]).some(m=>m.k===e.id&&m.shown));const cur=I.list[I.turn]||{};return{round:I.round||1,list:vis.map(e=>e.name),cur:cur.name||''}}
-function cxCard(c,opt){opt=opt||{};const id='cx-'+c.k;return`<div class="cx ${opt.hidden?'hidden':''} ${opt.isNew?'new':''}"><div class="face">${S.art[id]?artImg(id):`<span class="glyph">${esc((c.name||'?')[0])}</span>`}</div><div class="txt"><span class="eyebrow">${esc(c.kind||'')}</span><b>${esc(c.name)}</b>${c.blurb?`<p>${esc(c.blurb)}</p>`:''}</div></div>`}
+function cxCard(c,opt){opt=opt||{};const id='cx-'+c.k;return`<div class="cx pal-${cxPal(c)} ${opt.hidden?'hidden':''} ${opt.isNew?'new':''}"><div class="face">${S.art[id]?artImg(id):`<span class="glyph">${esc((c.name||'?')[0])}</span>`}</div><div class="txt"><span class="eyebrow">${esc(c.kind||'')}</span><b>${esc(c.name)}</b>${c.blurb?`<p>${esc(c.blurb)}</p>`:''}</div></div>`}
 function viewCodex(){const L=(S.pub&&S.pub.codex)||[];
   return`<div style="display:grid;gap:10px"><h2 style="font-size:1.6rem">The codex</h2><p class="muted" style="margin:0">Everyone and everything the guild has met so far, as far as the guild is willing to admit. New cards appear here when the DM reveals them.</p>
    ${L.length?`<div class="cxs">${L.slice().reverse().map(c=>{const n=!S.cxSeen.has(c.k);if(n)S.cxSeen.add(c.k);return cxCard(c,{isNew:n})}).join('')}</div>`:'<div class="empty"><h2>Blank pages</h2><p>Nobody worth writing down yet. Give it ten minutes.</p></div>'}</div>`}
 function turnsHTML(I){if(!I||!I.list||!I.list.length)return'';return`<div style="display:grid;gap:6px"><span class="eyebrow">Turn order · round ${I.round}</span><div class="turns">${I.list.map(n=>`<span class="${n===I.cur?'cur':''}">${esc(n)}</span>`).join('')}</div></div>`}
-function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25),codex:(d.codex||[]).filter(c=>c.shown).sort((a,b)=>(a.at||0)-(b.at||0)).map(c=>({k:c.k,name:c.name,kind:c.kind||'',blurb:c.blurb||'',art:'cx-'+c.k})),init:pubInit(d)}}
+function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25),codex:(d.codex||[]).filter(c=>c.shown).sort((a,b)=>(a.at||0)-(b.at||0)).map(c=>({k:c.k,name:c.name,kind:c.kind||'',blurb:c.blurb||'',art:'cx-'+c.k,pal:cxPal(c)})),init:pubInit(d)}}
 /* ---------- live HP, conditions, slots ---------- */
 function liveOf(c,l){const x=derive(c);l=l||{};const max=x.hpMax;return{x,max,hp:l.hp==null?max:Math.max(0,Math.min(max,+l.hp)),tmp:Math.max(0,+l.tmp||0),conds:l.conds||[],slots:l.slots||[],res:l.res||{}}}
 function rawLive(L){return{hp:L.hp,tmp:L.tmp,conds:L.conds,slots:L.slots,res:L.res}}
@@ -848,9 +854,10 @@ function viewDMCodex(){const L=S.dmt.codex||[];
      <div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(c.name)}</b><span class="chip ${c.shown?'on':''}">${c.shown?'Revealed':'Hidden'}</span></div>
       <label class="f" style="font-weight:400">Players read<input type="text" value="${esc(c.blurb||'')}" data-cxf="blurb" data-k="${c.k}"></label>
       <label class="f" style="font-weight:400">Only you see<input type="text" value="${esc(c.note||'')}" data-cxf="note" data-k="${c.k}"></label>
+      <label class="f" style="font-weight:400">Card palette<select data-cxf="pal" data-k="${c.k}">${Object.entries(PALETTES).map(([k,[l]])=>`<option value="${k}" ${cxPal(c)===k?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
       <div class="artrow"><label class="btn sm">${S.art['cx-'+c.k]?'Replace image':'Add image'}<input type="file" accept="image/*" data-art="cx-${c.k}" data-shown="${c.shown?1:0}"></label><button class="btn sm" data-act="cxprompt" data-k="${c.k}">Copy image prompt</button></div>
       <div class="row"><button class="btn sm ${c.shown?'':'pri'}" data-act="cxshow" data-k="${c.k}">${c.shown?'Hide again':'Reveal'}</button><button class="btn sm warn" data-act="cxrm" data-k="${c.k}">${S.armed==='cx'+c.k?'Tap again':'Remove'}</button></div></div></div>`).join(''):'<div class="empty"><h2>An empty codex</h2><p>Add the people and places you plan to introduce, or import a session plan.</p></div>'}</div></div>`}
-function cxPrompt(c){return ART_STYLE+'. '+(c.kind==='Place'?'A place: ':c.kind==='Thing'?'An object: ':'A character: ')+c.name+'. '+(c.art||c.blurb||'')+' Tone of Terry Pratchett’s Discworld: comic, characterful, slightly grotesque, warm.'}
+function cxPrompt(c){return artStyle(cxPal(c))+'. '+(c.kind==='Place'?'A place: ':c.kind==='Thing'?'An object: ':'A character: ')+c.name+'. '+(c.art||c.blurb||'')+' Tone of Terry Pratchett’s Discworld: comic, characterful, slightly grotesque, warm.'}
 function findPlayer(who){const w=String(who||'').toLowerCase();return(S.players||[]).find(p=>p.label.toLowerCase()===w||(p.data&&String(p.data.name||'').toLowerCase()===w))}
 const CRIB=[
  ['How a roll works','<p>Say what you want to do. If failure is interesting, ask for a roll: d20 plus the number on their sheet. Meet or beat the target and it works.</p><p><b>Targets (DC):</b> 5 very easy · 10 easy · 15 medium · 20 hard · 25 heroic.</p>'],
@@ -893,7 +900,7 @@ function viewGuide(){const P=S.dmt.plan;const I=S.dmt.init;const at=S.dmt.planAt
 function importPlan(txt){let j;try{j=JSON.parse(txt)}catch(e){toast('That is not a plan file I can read.');return}
   if(!j||!Array.isArray(j.steps)){toast('That file has no steps in it.');return}
   S.dmt.plan={title:String(j.title||'Tonight'),steps:j.steps.slice(0,30)};S.dmt.planAt=0;S.dmt.planDone={};
-  const cx=S.dmt.codex||[];(j.codex||[]).forEach(c=>{if(!c||!c.k||!c.name)return;if(!cx.find(x=>x.k===c.k))cx.push({k:String(c.k),name:String(c.name),kind:c.kind||'Character',blurb:c.blurb||'',note:c.note||'',art:c.art||'',shown:false})});S.dmt.codex=cx;
+  const cx=S.dmt.codex||[];(j.codex||[]).forEach(c=>{if(!c||!c.k||!c.name)return;const ex=cx.find(x=>x.k===c.k);if(ex){if(c.pal&&!ex.pal)ex.pal=c.pal;if(c.art&&!ex.art)ex.art=c.art}else cx.push({k:String(c.k),name:String(c.name),kind:c.kind||'Character',blurb:c.blurb||'',note:c.note||'',art:c.art||'',pal:c.pal||'',shown:false})});S.dmt.codex=cx;
   if(Array.isArray(j.scenes)&&j.scenes.length){S.dmt.presets=[...(S.dmt.presets||STARTER_SCENES),...j.scenes.filter(x=>x&&x.title)]}
   saveDmt('Plan loaded: '+esc(S.dmt.plan.title)+'.')}
 function viewRun(){
