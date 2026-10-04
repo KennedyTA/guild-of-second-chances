@@ -306,6 +306,7 @@ body.tv .cxs{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .cx.pal-teal{border-color:#5FA8A0;background:linear-gradient(#123A40,#0B1E24)}.cx.pal-green{border-color:#C08A55;background:linear-gradient(#1C3A28,#0E1E16)}
 .cx.pal-ivory{border-color:#E8D9A8;background:linear-gradient(#3B3628,#1E1B14)}.cx.pal-violet{border-color:#B8B4E0;background:linear-gradient(#2A2350,#130F2A)}
 .monart{display:grid;gap:8px}.monart-i{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center}.monart-i .thumb{width:56px;height:84px;object-fit:cover;border-radius:6px}.monart-i .ph{border:1px dashed currentColor;opacity:.3}.monart-i .btn{margin-top:4px}
+.guidecover img{width:100%;max-width:170px;border-radius:12px;display:block;margin:0 auto 6px}
 </style>
 </head>
 <body>
@@ -799,7 +800,7 @@ function monStatus(m){if(m.hp<=0)return'Down';const r=m.hp/m.max;if(r<=.5)return
 function pubInit(d){const I=d.init;if(!I||!I.list||!I.list.length)return null;const vis=I.list.filter(e=>e.kind!=='mon'||(d.monsters||[]).some(m=>m.k===e.id&&m.shown));const cur=I.list[I.turn]||{};return{round:I.round||1,list:vis.map(e=>e.name),cur:cur.name||''}}
 function cxCard(c,opt){opt=opt||{};const id='cx-'+c.k;return`<div class="cx pal-${cxPal(c)} ${opt.hidden?'hidden':''} ${opt.isNew?'new':''}"><div class="face">${S.art[id]?artImg(id):`<span class="glyph">${esc((c.name||'?')[0])}</span>`}</div><div class="txt"><span class="eyebrow">${esc(c.kind||'')}</span><b>${esc(c.name)}</b>${c.blurb?`<p>${esc(c.blurb)}</p>`:''}</div></div>`}
 function viewCodex(){const L=(S.pub&&S.pub.codex)||[];
-  return`<div style="display:grid;gap:10px"><h2 style="font-size:1.6rem">The codex</h2><p class="muted" style="margin:0">Everyone and everything the guild has met so far, as far as the guild is willing to admit. New cards appear here when the DM reveals them.</p>
+  return`<div style="display:grid;gap:10px">${S.art['guide-cover']?`<div class="guidecover">${artImg('guide-cover')}</div>`:''}<span class="eyebrow">Don't panic (yet)</span><h2 style="font-size:1.6rem;margin:0">The Second Chancer's Guide to Lanternford</h2><p class="muted" style="margin:0">Issued to every member of the guild. Everyone and everything you have met so far, as far as the Guide is willing to admit. New entries appear when the DM reveals them. Most of it is wrong. All of it is confident.</p>
    ${L.length?`<div class="cxs">${L.slice().reverse().map(c=>{const n=!S.cxSeen.has(c.k);if(n)S.cxSeen.add(c.k);return cxCard(c,{isNew:n})}).join('')}</div>`:'<div class="empty"><h2>Blank pages</h2><p>Nobody worth writing down yet. Give it ten minutes.</p></div>'}</div>`}
 function turnsHTML(I){if(!I||!I.list||!I.list.length)return'';return`<div style="display:grid;gap:6px"><span class="eyebrow">Turn order · round ${I.round}</span><div class="turns">${I.list.map(n=>`<span class="${n===I.cur?'cur':''}">${esc(n)}</span>`).join('')}</div></div>`}
 function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25),codex:(d.codex||[]).filter(c=>c.shown).sort((a,b)=>(a.at||0)-(b.at||0)).map(c=>({k:c.k,name:c.name,kind:c.kind||'',blurb:c.blurb||'',art:'cx-'+c.k,pal:cxPal(c)})),init:pubInit(d)}}
@@ -840,7 +841,7 @@ function viewTable(){
   fresh.forEach(k=>S.seen.add(k));
   const sc=P.scene?`<div class="panel scene"><span class="eyebrow">Now</span><h2>${esc(P.scene.title)}</h2>${P.scene.text?`<p>${esc(P.scene.text)}</p>`:''}</div>`:`<div class="empty"><h2>The lantern is not lit yet</h2><p>The DM is still scheming. Pour yourself a drink. When the scene is set it appears here, and monsters flip onto the table when they arrive.</p></div>`;
   const cxl=((P.codex)||[]).slice(-4).reverse();
-  return sc+turnsHTML(P.init)+partyHTML()+(cxl.length&&S.tableMode?`<div style="display:grid;gap:10px"><span class="eyebrow">Lately in the codex</span><div class="cxs">${cxl.map(c=>cxCard(c)).join('')}</div></div>`:'')+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
+  return sc+turnsHTML(P.init)+partyHTML()+(cxl.length&&S.tableMode?`<div style="display:grid;gap:10px"><span class="eyebrow">Lately in the Guide</span><div class="cxs">${cxl.map(c=>cxCard(c)).join('')}</div></div>`:'')+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
 }
 const KINDS=['Character','Place','Thing','Foe','Faction'];
 function viewDMCodex(){const L=S.dmt.codex||[];
@@ -851,6 +852,8 @@ function viewDMCodex(){const L=S.dmt.codex||[];
     <label class="f" style="font-weight:400">Your private note<input type="text" id="cxnote" placeholder="Works for the Order of Holy Restraint. Never fights; always returns."></label>
     <div><button class="btn pri sm" data-act="cxadd">Add, hidden</button></div></div>
    <p class="sub" style="margin:0">Tip: import a session plan under Guide and its codex cards arrive here ready to reveal.</p>
+   <div class="panel" style="display:grid;gap:10px"><h3>The Second Chancer's Guide</h3><p class="sub" style="margin:0">Players see this codex as their copy of the Guide. Add a cover and it sits at the top of their Guide tab.</p>
+    <div class="monart-i">${S.art['guide-cover']?artImg('guide-cover','thumb'):'<div class="thumb ph"></div>'}<div><b style="display:block">Guide cover</b><label class="btn sm">${S.art['guide-cover']?'Replace':'Add image'}<input type="file" accept="image/*" data-art="guide-cover" data-shown="1"></label></div></div></div>
    ${monArtPanel()}</div>
    <div style="display:grid;gap:10px;align-content:start">${L.length?L.map(c=>`<div class="panel" style="display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start">${cxCard(c,{hidden:!c.shown})}
      <div style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><b>${esc(c.name)}</b><span class="chip ${c.shown?'on':''}">${c.shown?'Revealed':'Hidden'}</span></div>
@@ -993,7 +996,7 @@ function render(){
   $('#role').innerHTML=LIVE?'':`<span class="sub">Demo:</span>${[['player','Player'],['dm','DM'],['table','Table screen']].map(([k,l])=>`<button class="chip ${(k==='dm'&&S.dmMode)||(k==='table'&&S.tableMode)||(k==='player'&&!S.dmMode&&!S.tableMode)?'on':''}" data-act="demo" data-v="${k}">${l}</button>`).join('')}`;
   let tabs=[];
   if(S.dmMode&&S.pass&&S.err!=='auth')tabs=[['players','Players'],['run','Run the table'],['codex','Codex'],['guide','Guide']];
-  else if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data&&!S.editing)tabs=[['me','My character'],['table','The table'],['codex','Codex']];
+  else if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data&&!S.editing)tabs=[['me','My character'],['table','The table'],['codex','The Guide']];
   const cur=S.dmMode?S.dtab:S.ptab;
   $('#tabs').innerHTML=tabs.map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-current="${cur===k}">${l}</button>`).join('');
   document.body.classList.toggle('tv',S.tableMode);
@@ -1045,7 +1048,7 @@ function fxTick(t){
 async function pollTable(force){
   if(document.hidden&&!force)return;
   const on=S.tableMode||(!S.dmMode&&S.me&&S.me.data&&!S.editing);if(!on)return;
-  try{const r=await API.tableGet();const pub=(r&&r.pub)||{};const sig=JSON.stringify(pub);let ch=false;if(sig!==S.pubSig){S.pubSig=sig;S.pub=pub;ch=true}const ids=[...(pub.monsters||[]).map(m=>m.art),...(pub.codex||[]).map(c=>c.art)];if(S.me&&S.me.id)ids.push('pc-'+S.me.id);if(await syncArt(ids,false))ch=true;if(ch&&!busy())render();S.artNew.clear()}catch(e){}
+  try{const r=await API.tableGet();const pub=(r&&r.pub)||{};const sig=JSON.stringify(pub);let ch=false;if(sig!==S.pubSig){S.pubSig=sig;S.pub=pub;ch=true}const ids=[...(pub.monsters||[]).map(m=>m.art),...(pub.codex||[]).map(c=>c.art),'guide-cover'];if(S.me&&S.me.id)ids.push('pc-'+S.me.id);if(await syncArt(ids,false))ch=true;if(ch&&!busy())render();S.artNew.clear()}catch(e){}
 }
 setInterval(pollTable,4000);
 function busy(){const a=document.activeElement;return a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='file'}
