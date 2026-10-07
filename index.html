@@ -290,6 +290,14 @@ header.top{position:sticky!important;top:0;z-index:30!important;background:var(-
 .cx .txt{padding:8px 10px;display:grid;gap:2px}.cx .txt b{font-family:var(--display);letter-spacing:.06em}
 .cx .txt p{margin:0;font-size:.88rem;color:var(--muted)}
 .cx.hidden{opacity:.55;border-style:dashed}
+.cx.tap{cursor:pointer;transition:transform .15s}.cx.tap:hover{transform:translateY(-2px)}.cx.tap:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cx.tap .txt p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cxf{gap:6px}.cxf .chip{cursor:pointer;background:transparent}.cxf .chip.on{border-color:var(--accent);color:var(--accent)}
+.cxbig .cxbody{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:720px){.cxbig .cxbody{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+.cxbig .cxart img{width:100%;max-height:75vh;object-fit:contain;border-radius:10px;display:block;margin:0 auto}
+.cxbig h2{margin:0 0 8px;font-size:1.6rem}.cxbig p{font-size:1.05rem;line-height:1.55}
+.story details{border-top:1px solid var(--line);padding:6px 0}.story summary{cursor:pointer;font-family:var(--display);letter-spacing:.04em;padding:4px 0}.story p{margin:.5em 0;line-height:1.6;max-width:65ch}
 @media (prefers-reduced-motion:no-preference){.cx.new{animation:flip .7s ease-out}}
 body.tv .cxs{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .gstep{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--surface);display:grid;gap:8px}
@@ -301,7 +309,8 @@ body.tv .cxs{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .init .cur{outline:2px solid var(--accent);border-radius:8px}
 .crib details{border-top:1px solid var(--line);padding:6px 0}.crib summary{cursor:pointer;font-weight:700}
 .crib p,.crib li{margin:.3em 0;font-size:.95rem}
-.turns{display:flex;gap:6px;flex-wrap:wrap}.turns span{border:1px solid var(--line);border-radius:999px;padding:2px 10px}.turns span.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
+.turns{display:flex;gap:6px;flex-wrap:wrap}.turns span{border:1px solid var(--line);border-radius:999px;padding:2px 10px}.turns span.unk{color:var(--muted);letter-spacing:.15em}
+.turns span.cur{border-color:var(--accent);color:var(--accent);font-weight:700}
 .cx.pal-burgundy{border-color:var(--blood);background:linear-gradient(#3A1C2A,#140E1E)}.cx.pal-burgundy .glyph{border-color:var(--blood);color:var(--blood)}.cx.pal-burgundy .eyebrow{color:var(--blood)}
 .cx.pal-teal{border-color:#5FA8A0;background:linear-gradient(#123A40,#0B1E24)}.cx.pal-green{border-color:#C08A55;background:linear-gradient(#1C3A28,#0E1E16)}
 .cx.pal-ivory{border-color:#E8D9A8;background:linear-gradient(#3B3628,#1E1B14)}.cx.pal-violet{border-color:#B8B4E0;background:linear-gradient(#2A2350,#130F2A)}
@@ -797,13 +806,19 @@ async function syncArt(ids,dm){ids=[...new Set(ids.filter(Boolean))];if(!ids.len
   return changed}
 function artImg(id,cls){const a=S.art[id];return a?`<img class="${cls||''}" src="${a.data}" alt="">`:''}
 function monStatus(m){if(m.hp<=0)return'Down';const r=m.hp/m.max;if(r<=.5)return'Bloodied';if(r<1)return'Hurt';return'Unhurt'}
-function pubInit(d){const I=d.init;if(!I||!I.list||!I.list.length)return null;const vis=I.list.filter(e=>e.kind!=='mon'||(d.monsters||[]).some(m=>m.k===e.id&&m.shown));const cur=I.list[I.turn]||{};return{round:I.round||1,list:vis.map(e=>e.name),cur:cur.name||''}}
-function cxCard(c,opt){opt=opt||{};const id='cx-'+c.k;return`<div class="cx pal-${cxPal(c)} ${opt.hidden?'hidden':''} ${opt.isNew?'new':''}"><div class="face">${S.art[id]?artImg(id):`<span class="glyph">${esc((c.name||'?')[0])}</span>`}</div><div class="txt"><span class="eyebrow">${esc(c.kind||'')}</span><b>${esc(c.name)}</b>${c.blurb?`<p>${esc(c.blurb)}</p>`:''}</div></div>`}
-function viewCodex(){const L=(S.pub&&S.pub.codex)||[];
-  return`<div style="display:grid;gap:10px">${S.art['guide-cover']?`<div class="guidecover">${artImg('guide-cover')}</div>`:''}<span class="eyebrow">Don't panic (yet)</span><h2 style="font-size:1.6rem;margin:0">The Second Chancer's Guide to Lanternford</h2><p class="muted" style="margin:0">Issued to every member of the guild. Everyone and everything you have met so far, as far as the Guide is willing to admit. New entries appear when the DM reveals them. Most of it is wrong. All of it is confident.</p>
-   ${L.length?`<div class="cxs">${L.slice().reverse().map(c=>{const n=!S.cxSeen.has(c.k);if(n)S.cxSeen.add(c.k);return cxCard(c,{isNew:n})}).join('')}</div>`:'<div class="empty"><h2>Blank pages</h2><p>Nobody worth writing down yet. Give it ten minutes.</p></div>'}</div>`}
-function turnsHTML(I){if(!I||!I.list||!I.list.length)return'';return`<div style="display:grid;gap:6px"><span class="eyebrow">Turn order · round ${I.round}</span><div class="turns">${I.list.map(n=>`<span class="${n===I.cur?'cur':''}">${esc(n)}</span>`).join('')}</div></div>`}
-function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25),codex:(d.codex||[]).filter(c=>c.shown).sort((a,b)=>(a.at||0)-(b.at||0)).map(c=>({k:c.k,name:c.name,kind:c.kind||'',blurb:c.blurb||'',art:'cx-'+c.k,pal:cxPal(c)})),init:pubInit(d)}}
+function pubInit(d){const I=d.init;if(!I||!I.list||!I.list.length)return null;const shown=e=>(d.monsters||[]).some(m=>m.k===e.id&&m.shown);return{round:I.round||1,list:I.list.map((e,i)=>{const cur=i===I.turn;return{n:e.kind==='mon'?(cur&&shown(e)?e.name:'???'):e.name,cur}})}}
+function cxCard(c,opt){opt=opt||{};const id='cx-'+c.k;return`<div class="cx pal-${cxPal(c)} ${opt.hidden?'hidden':''} ${opt.isNew?'new':''} ${opt.open?'tap':''}" ${opt.open?`data-act="cxopen" data-k="${esc(c.k)}" role="button" tabindex="0" aria-label="Open ${esc(c.name)}"`:''}><div class="face">${S.art[id]?artImg(id):`<span class="glyph">${esc((c.name||'?')[0])}</span>`}</div><div class="txt"><span class="eyebrow">${esc(c.kind||'')}</span><b>${esc(c.name)}</b>${c.blurb?`<p>${esc(c.blurb)}</p>`:''}</div></div>`}
+function storyHTML(st){if(!st||!st.length)return'';return`<div class="panel story"><span class="eyebrow">The story so far</span>${st.map((c,i)=>`<details ${i===st.length-1?'open':''}><summary>${esc(c.title||('Chapter '+(i+1)))}</summary>${String(c.text).split(/\n\s*\n/).map(p=>`<p>${esc(p.trim())}</p>`).join('')}</details>`).join('')}</div>`}
+function viewCodex(){const L=(S.pub&&S.pub.codex)||[];const kinds=[...new Set(L.map(c=>c.kind||'Other'))];const f=S.cxKind&&kinds.includes(S.cxKind)?S.cxKind:'';const shown=L.slice().reverse().filter(c=>!f||(c.kind||'Other')===f);
+  return`<div style="display:grid;gap:12px">${S.art['guide-cover']?`<div class="guidecover">${artImg('guide-cover')}</div>`:''}<span class="eyebrow">Don't panic (yet)</span><h2 style="font-size:1.6rem;margin:0">The Second Chancer's Guide to Lanternford</h2><p class="muted" style="margin:0">Issued to every member of the guild. Everyone and everything you have met so far, as far as the Guide is willing to admit. Tap an entry to read it properly. Most of it is wrong. All of it is confident.</p>
+   ${storyHTML(S.pub&&S.pub.story)}
+   ${kinds.length>1?`<div class="row cxf" role="group" aria-label="Show">${['',...kinds].map(k=>`<button class="chip ${k===f?'on':''}" data-act="cxkind" data-v="${esc(k)}" aria-pressed="${k===f}">${esc(k||'Everything')}</button>`).join('')}</div>`:''}
+   ${L.length?`<div class="cxs">${shown.map(c=>{const n=!S.cxSeen.has(c.k);if(n)S.cxSeen.add(c.k);return cxCard(c,{isNew:n,open:1})}).join('')}</div>`:'<div class="empty"><h2>Blank pages</h2><p>Nobody worth writing down yet. Give it ten minutes.</p></div>'}</div>`}
+function cxModal(){const L=((S.pub&&S.pub.codex)||[]).slice().reverse();const ix=L.findIndex(c=>c.k===S.cxOpen);const c=L[ix];if(!c)return'';const id='cx-'+c.k;const prev=L[ix-1],next=L[ix+1];
+  return`<div class="ov" data-act="closebg"><div class="card cxbig pal-${cxPal(c)}" role="dialog" aria-label="${esc(c.name)}"><div class="ovhead"><span class="eyebrow">${esc(c.kind||'')} · The Guide</span><button class="btn sm" data-act="close">Close</button></div>
+   <div class="cxbody">${S.art[id]?`<div class="cxart">${artImg(id)}</div>`:''}<div class="cxtext"><h2>${esc(c.name)}</h2>${c.blurb?`<p>${esc(c.blurb)}</p>`:''}<div class="row" style="margin-top:12px">${prev?`<button class="btn sm" data-act="cxopen" data-k="${esc(prev.k)}">‹ ${esc(prev.name)}</button>`:''}${next?`<button class="btn sm" data-act="cxopen" data-k="${esc(next.k)}">${esc(next.name)} ›</button>`:''}</div></div></div></div></div>`}
+function turnsHTML(I){if(!I||!I.list||!I.list.length)return'';return`<div style="display:grid;gap:6px"><span class="eyebrow">Turn order · round ${I.round}</span><div class="turns">${I.list.map(x=>typeof x==='string'?{n:x,cur:x===I.cur}:x).map(x=>`<span class="${x.cur?'cur':''} ${x.n==='???'?'unk':''}">${esc(x.n)}</span>`).join('')}</div></div>`}
+function pubFrom(d){return{scene:d.scene&&d.scene.title?{title:d.scene.title,text:d.scene.text,mood:d.scene.mood||''}:null,monsters:(d.monsters||[]).filter(m=>m.shown).map(m=>({k:m.k,name:m.name,status:monStatus(m),desc:m.desc||'',art:monArtId(m)})),log:(d.log||[]).slice(0,25),codex:(d.codex||[]).filter(c=>c.shown).sort((a,b)=>(a.at||0)-(b.at||0)).map(c=>({k:c.k,name:c.name,kind:c.kind||'',blurb:c.blurb||'',art:'cx-'+c.k,pal:cxPal(c)})),init:pubInit(d),story:(d.story||[]).filter(c=>c&&c.text).map(c=>({title:String(c.title||''),text:String(c.text)}))}}
 /* ---------- live HP, conditions, slots ---------- */
 function liveOf(c,l){const x=derive(c);l=l||{};const max=x.hpMax;return{x,max,hp:l.hp==null?max:Math.max(0,Math.min(max,+l.hp)),tmp:Math.max(0,+l.tmp||0),conds:l.conds||[],slots:l.slots||[],res:l.res||{}}}
 function rawLive(L){return{hp:L.hp,tmp:L.tmp,conds:L.conds,slots:L.slots,res:L.res}}
@@ -841,11 +856,14 @@ function viewTable(){
   fresh.forEach(k=>S.seen.add(k));
   const sc=P.scene?`<div class="panel scene"><span class="eyebrow">Now</span><h2>${esc(P.scene.title)}</h2>${P.scene.text?`<p>${esc(P.scene.text)}</p>`:''}</div>`:`<div class="empty"><h2>The lantern is not lit yet</h2><p>The DM is still scheming. Pour yourself a drink. When the scene is set it appears here, and monsters flip onto the table when they arrive.</p></div>`;
   const cxl=((P.codex)||[]).slice(-4).reverse();
-  return sc+turnsHTML(P.init)+partyHTML()+(cxl.length&&S.tableMode?`<div style="display:grid;gap:10px"><span class="eyebrow">Lately in the Guide</span><div class="cxs">${cxl.map(c=>cxCard(c)).join('')}</div></div>`:'')+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
+  return sc+turnsHTML(P.init)+partyHTML()+(cxl.length&&S.tableMode?`<div style="display:grid;gap:10px"><span class="eyebrow">Lately in the Guide</span><div class="cxs">${cxl.map(c=>cxCard(c,{open:1})).join('')}</div></div>`:'')+(mons?`<div style="display:grid;gap:10px"><span class="eyebrow">In the fight</span><div class="mons">${mons}</div></div>`:'')+((P.log||[]).length?`<div class="panel"><h3>The story so far</h3><div class="log">${P.log.map(l=>`<div>${esc(l.text)}</div>`).join('')}</div></div>`:'');
 }
-const KINDS=['Character','Place','Thing','Foe','Faction'];
+const KINDS=['Character','Guild member','Place','Thing','Foe','Faction'];
+function parseStory(t){const out=[];let cur=null;String(t).split('\n').forEach(l=>{const m=l.match(/^##\s*(.*)$/);if(m){cur={title:m[1].trim(),text:''};out.push(cur)}else{if(!cur){cur={title:'',text:''};out.push(cur)}cur.text+=(cur.text?'\n':'')+l}});return out.map(c=>({title:c.title,text:c.text.trim()})).filter(c=>c.text)}
+function storyText(){return(S.dmt.story||[]).map(c=>'## '+(c.title||'')+'\n'+c.text).join('\n\n')}
 function viewDMCodex(){const L=S.dmt.codex||[];
   return`<div class="sgrid"><div style="display:grid;gap:14px;align-content:start">
+   <div class="panel" style="display:grid;gap:10px"><h3>The story so far</h3><p class="sub" style="margin:0">Shows at the top of every player's Guide. Start each chapter with a line like <b>## Session one: the Gutter Pit</b>; leave a blank line between paragraphs. The newest chapter opens by default.</p><textarea id="storytext" rows="8" placeholder="## Session one\nThe Lantern at the Ford was a coaching inn until it went bankrupt. Twice.">${esc(storyText())}</textarea><div><button class="btn pri sm" data-act="storysave">Save the story</button></div></div>
    <div class="panel" style="display:grid;gap:10px"><h3>Add to the codex</h3><p class="sub" style="margin:0">Entries start hidden. Reveal them when the party meets them; the card flips onto every phone and the table screen.</p>
     <div class="row"><input type="text" id="cxname" placeholder="Brother Castus" style="flex:2;min-width:150px"><select id="cxkind" aria-label="Kind">${KINDS.map(k=>`<option>${k}</option>`).join('')}</select></div>
     <label class="f" style="font-weight:400">What the players read<input type="text" id="cxblurb" placeholder="A polite monk with a velvet bag and silver tongs."></label>
@@ -909,7 +927,7 @@ function viewGuide(){const P=S.dmt.plan;const I=S.dmt.init;const at=S.dmt.planAt
   </div></div>`}
 function importPlan(txt){let j;try{j=JSON.parse(txt)}catch(e){toast('That is not a plan file I can read.');return}
   if(!j||!Array.isArray(j.steps)){toast('That file has no steps in it.');return}
-  S.dmt.plan={title:String(j.title||'Tonight'),steps:j.steps.slice(0,30)};S.dmt.planAt=0;S.dmt.planDone={};
+  S.dmt.plan={title:String(j.title||'Tonight'),steps:j.steps.slice(0,30)};S.dmt.planAt=0;S.dmt.planDone={};if(Array.isArray(j.story)&&j.story.length)S.dmt.story=j.story.filter(c=>c&&c.text).map(c=>({title:String(c.title||''),text:String(c.text)}));
   const cx=S.dmt.codex||[];(j.codex||[]).forEach(c=>{if(!c||!c.k||!c.name)return;const ex=cx.find(x=>x.k===c.k);if(ex){if(c.pal&&!ex.pal)ex.pal=c.pal;if(c.art&&!ex.art)ex.art=c.art}else cx.push({k:String(c.k),name:String(c.name),kind:c.kind||'Character',blurb:c.blurb||'',note:c.note||'',art:c.art||'',pal:c.pal||'',shown:false})});S.dmt.codex=cx;
   if(Array.isArray(j.scenes)&&j.scenes.length){S.dmt.presets=[...(S.dmt.presets||STARTER_SCENES),...j.scenes.filter(x=>x&&x.title)]}
   saveDmt('Plan loaded: '+esc(S.dmt.plan.title)+'.')}
@@ -988,7 +1006,7 @@ function pendingWhisper(){if(S.dmMode||S.tableMode||!S.inbox)return null;return 
 function whisperModal(w){return`<div class="ov"><div class="card whisper" role="dialog" aria-label="A whisper from the DM"><span class="eyebrow">A whisper from the DM · for your eyes only</span><p class="wtext">${esc(w.text)}</p>
   <label class="f">Your answer <span class="h">Only the DM sees it. Keep a straight face.</span><textarea id="wreply" rows="3"></textarea></label>
   <div class="row"><button class="btn pri" data-act="wsend" data-id="${esc(w.id)}">Send to the DM</button><button class="btn sm" data-act="wread" data-id="${esc(w.id)}">Just read it</button></div></div></div>`}
-function renderOverlay(){const o=$('#ov');const pw=pendingWhisper();if(pw){if(o.dataset.w!==pw.id){o.innerHTML=whisperModal(pw);o.dataset.w=pw.id}return}o.dataset.w='';const p=S.open&&S.players.find(p=>p.id===S.open);if(!p||!p.data){o.innerHTML='';return}
+function renderOverlay(){const o=$('#ov');const pw=pendingWhisper();if(pw){if(o.dataset.w!==pw.id){o.innerHTML=whisperModal(pw);o.dataset.w=pw.id}return}o.dataset.w='';if(S.cxOpen){o.innerHTML=cxModal();if(o.innerHTML)return;S.cxOpen=null}const p=S.open&&S.players.find(p=>p.id===S.open);if(!p||!p.data){o.innerHTML='';return}
   o.innerHTML=`<div class="ov" data-act="closebg"><div class="card" role="dialog" aria-label="${esc(p.data.name)}"><div class="ovhead"><span class="eyebrow">Character sheet</span><button class="btn sm" data-act="close">Close</button></div>${S.art['pc-'+p.id]?`<div class="portrait" style="margin-bottom:12px">${artImg('pc-'+p.id)}</div>`:''}${sheetHTML(p.data,{by:p.label,secret:p.secret,gifts:(p.preset||{}).items})}</div></div>`}
 
 /* ---------- render ---------- */
@@ -1080,6 +1098,7 @@ function setLive(id,fn){const dm=S.dmMode;let rec=dm?(S.party||[]).find(p=>p.id=
   clearTimeout(liveQ[id]);liveQ[id]=setTimeout(()=>{const v=rec.live;(dm?API.dmSaveLive(S.pass,id,v):API.saveLive(S.token,v)).then(()=>{S.liveEdit[id]=Date.now()}).catch(e=>toast('That did not save: '+esc(e.message)))},500)}
 document.addEventListener('change',e=>{const id=e.target.dataset&&e.target.dataset.lcondadd;if(!id||!e.target.value)return;const v=e.target.value;setLive(id,L=>{if(!L.conds.includes(v))L.conds=[...L.conds,v]});toast(esc(v)+': '+esc(CONDS[v]||''),5000)});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='dmpass')document.querySelector('[data-act=dmlogin]').click();if(e.key==='Enter'&&e.target.id==='newplayer')document.querySelector('[data-act=add]').click()});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.cx.tap')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&S.cxOpen){S.cxOpen=null;renderOverlay()}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
   if(a==='closebg'&&e.target!==b)return;
@@ -1140,7 +1159,10 @@ document.addEventListener('click',async e=>{
   case'remove':{const id=b.dataset.id;if(S.armed!=='rm'+id){S.armed='rm'+id;rr();break}S.armed=null;try{await API.dmRemove(S.pass,id);await dmLoad()}catch(err){toast('Could not remove: '+esc(err.message))}break}
   case'copy':{const u=b.dataset.url;try{await navigator.clipboard.writeText(u);toast('Link copied.')}catch(err){toast('Copy this link: '+esc(u),9000)}break}
   case'open':S.open=b.dataset.id;renderOverlay();break;
-  case'close':case'closebg':S.open=null;renderOverlay();break;
+  case'close':case'closebg':S.open=null;S.cxOpen=null;renderOverlay();break;
+  case'cxopen':S.cxOpen=b.dataset.k;renderOverlay();break;
+  case'cxkind':S.cxKind=b.dataset.v;render();break;
+  case'storysave':{const t=($('#storytext')||{}).value||'';S.dmt.story=parseStory(t);saveDmt(S.dmt.story.length?'The story so far is on every phone.':'Story cleared.');break}
   case'demo':{const v=b.dataset.v;S.dmMode=v==='dm';S.tableMode=v==='table';S.open=null;
     if(v==='player'){const s=demo.load();if(!S.token||!s.players.find(p=>p.token===S.token)){if(!s.players.length){s.players.push({token:'demo'+Math.random().toString(36).slice(2,8),label:'Demo player'});demo.save(s)}S.token=s.players[0].token;lsSet('wt2.token',S.token)}S.me=await API.me(S.token);S.loaded=true;S.draft=lsGet(draftKey(),null)||blankDraft();S.step=0}
     if(v==='dm'&&S.pass)await dmLoad();if(v==='table')await pollTable(true);window.scrollTo(0,0);rr();break}
