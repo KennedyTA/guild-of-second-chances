@@ -573,7 +573,7 @@ function derive(c){
   const avg=K.die/2+1;
   const hpMax=Math.max(1,K.die+m.con+(lvl-1)*(avg+m.con)+(c.ancestry==='dwarf'?lvl:0)+(+c.hpBonus||0));
   const ac=K.ac(m)+(+c.acBonus||0);
-  const attacks=K.attacks.map(w=>({n:w.n,hit:m[w.ab]+prof,d:w.d+kmod(m[w.ab]),t:w.t}));
+  const FIN=/^(Dagger|Rapier|Shortsword|Scimitar|Whip)/;const attacks=K.attacks.map(w=>{const ab=FIN.test(w.n)&&m.str>m.dex?'str':w.ab;return{n:w.n,hit:m[ab]+prof,d:w.d+kmod(m[ab]),t:w.t}});
   if(c.cls==='rogue')attacks.push({n:'Sneak attack (extra)',hit:null,d:Math.ceil(lvl/2)+'d6',t:'added once per turn'});
   let cast=null;
   if(K.cast){const cm=m[K.cast.ab];const slots=(K.cast.full?SLOTS_FULL:SLOTS_HALF)[lvl]||[];
