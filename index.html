@@ -1098,7 +1098,11 @@ function setLive(id,fn){const dm=S.dmMode;let rec=dm?(S.party||[]).find(p=>p.id=
   clearTimeout(liveQ[id]);liveQ[id]=setTimeout(()=>{const v=rec.live;(dm?API.dmSaveLive(S.pass,id,v):API.saveLive(S.token,v)).then(()=>{S.liveEdit[id]=Date.now()}).catch(e=>toast('That did not save: '+esc(e.message)))},500)}
 document.addEventListener('change',e=>{const id=e.target.dataset&&e.target.dataset.lcondadd;if(!id||!e.target.value)return;const v=e.target.value;setLive(id,L=>{if(!L.conds.includes(v))L.conds=[...L.conds,v]});toast(esc(v)+': '+esc(CONDS[v]||''),5000)});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='dmpass')document.querySelector('[data-act=dmlogin]').click();if(e.key==='Enter'&&e.target.id==='newplayer')document.querySelector('[data-act=add]').click()});
-document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.cx.tap')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&S.cxOpen){S.cxOpen=null;renderOverlay()}});
+function hist(m,st){try{history[m==='push'?'pushState':'replaceState'](st,'')}catch(e){}}
+try{if(!history.state)history.replaceState({ptab:S.ptab||'me'},'')}catch(e){}
+addEventListener('popstate',e=>{const st=e.state||{};if(S.dmMode)return;const tab=st.ptab||'me';const cx=st.cx||null;
+  if(cx!==S.cxOpen){S.cxOpen=cx;renderOverlay()}if(tab!==S.ptab){S.ptab=tab;if(tab==='table')pollTable(true);window.scrollTo(0,0);render()}});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.cx.tap')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&S.cxOpen){if(history.state&&history.state.cx)history.back();else{S.cxOpen=null;renderOverlay()}}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
   if(a==='closebg'&&e.target!==b)return;
@@ -1159,14 +1163,14 @@ document.addEventListener('click',async e=>{
   case'remove':{const id=b.dataset.id;if(S.armed!=='rm'+id){S.armed='rm'+id;rr();break}S.armed=null;try{await API.dmRemove(S.pass,id);await dmLoad()}catch(err){toast('Could not remove: '+esc(err.message))}break}
   case'copy':{const u=b.dataset.url;try{await navigator.clipboard.writeText(u);toast('Link copied.')}catch(err){toast('Copy this link: '+esc(u),9000)}break}
   case'open':S.open=b.dataset.id;renderOverlay();break;
-  case'close':case'closebg':S.open=null;S.cxOpen=null;renderOverlay();break;
-  case'cxopen':S.cxOpen=b.dataset.k;renderOverlay();break;
+  case'close':case'closebg':S.open=null;if(S.cxOpen&&history.state&&history.state.cx){history.back();break}S.cxOpen=null;renderOverlay();break;
+  case'cxopen':hist(S.cxOpen?'replace':'push',{ptab:S.ptab,cx:b.dataset.k});S.cxOpen=b.dataset.k;renderOverlay();break;
   case'cxkind':S.cxKind=b.dataset.v;render();break;
   case'storysave':{const t=($('#storytext')||{}).value||'';S.dmt.story=parseStory(t);saveDmt(S.dmt.story.length?'The story so far is on every phone.':'Story cleared.');break}
   case'demo':{const v=b.dataset.v;S.dmMode=v==='dm';S.tableMode=v==='table';S.open=null;
     if(v==='player'){const s=demo.load();if(!S.token||!s.players.find(p=>p.token===S.token)){if(!s.players.length){s.players.push({token:'demo'+Math.random().toString(36).slice(2,8),label:'Demo player'});demo.save(s)}S.token=s.players[0].token;lsSet('wt2.token',S.token)}S.me=await API.me(S.token);S.loaded=true;S.draft=lsGet(draftKey(),null)||blankDraft();S.step=0}
     if(v==='dm'&&S.pass)await dmLoad();if(v==='table')await pollTable(true);window.scrollTo(0,0);rr();break}
-  case'tab':if(S.dmMode){S.dtab=b.dataset.t;if(S.dtab==='run'||S.dtab==='guide')setTimeout(pollParty,50)}else{S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true);setTimeout(pollParty,50)}window.scrollTo(0,0);rr();break;
+  case'tab':if(S.dmMode){S.dtab=b.dataset.t;if(S.dtab==='run'||S.dtab==='guide')setTimeout(pollParty,50)}else{if(S.ptab!==b.dataset.t)hist('push',{ptab:b.dataset.t});S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true);setTimeout(pollParty,50)}window.scrollTo(0,0);rr();break;
   case'sceneset':S.dmt.scene={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};S.moodPick=null;saveDmt('The table can see the scene.');break;
   case'moodpick':{S.dmt.scene.title=$('#stitle').value;S.dmt.scene.text=$('#stext').value;S.moodPick=b.dataset.v;rr();break}
   case'scenesave':{const s={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};if(!s.title)break;const L=S.dmt.presets||clone(STARTER_SCENES);S.dmt.presets=[s,...L.filter(x=>x.title!==s.title)].slice(0,30);saveDmt('Saved as a preset.');break}
