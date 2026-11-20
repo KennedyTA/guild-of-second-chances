@@ -316,6 +316,17 @@ body.tv .cxs{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .cx.pal-ivory{border-color:#E8D9A8;background:linear-gradient(#3B3628,#1E1B14)}.cx.pal-violet{border-color:#B8B4E0;background:linear-gradient(#2A2350,#130F2A)}
 .monart{display:grid;gap:8px}.monart-i{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center}.monart-i .thumb{width:56px;height:84px;object-fit:cover;border-radius:6px}.monart-i .ph{border:1px dashed currentColor;opacity:.3}.monart-i .btn{margin-top:4px}
 .guidecover img{width:100%;max-width:170px;border-radius:12px;display:block;margin:0 auto 6px}
+
+/* missions */
+.ms-past{border-left:3px solid var(--line);padding-left:12px;color:var(--muted)}
+.ms-past p,.ms-now p{margin:.55em 0}.ms-now{font-size:1.04rem;line-height:1.6}
+.ms-did{color:var(--accent);font-style:italic}
+.ms-choices{display:grid;gap:8px}
+.ms-choices .btn{justify-content:flex-start;text-align:left;white-space:normal;height:auto;min-height:44px;padding:10px 14px;font-family:inherit;letter-spacing:0;font-size:1rem;font-weight:400;flex-wrap:wrap}
+.ms-roll{font-family:var(--display);font-size:2.6rem;line-height:1}
+.ms-roll small{font-size:1rem;color:var(--muted);font-family:inherit}
+.perk{border-color:var(--brass)}.perk.used{opacity:.55}
+.ms-log{display:grid;gap:6px;font-size:.92rem}.ms-log>div{border-left:3px solid var(--line);padding-left:10px}
 </style>
 </head>
 <body>
@@ -658,13 +669,20 @@ const API={
   async partyGet(){if(!LIVE)return demo.load().players.filter(p=>p.data).map(p=>({id:p.token,data:p.data,live:p.live||{}}));return rpc('wt_party_get')},
   async saveLive(token,live){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===token);if(!p)throw new Error('Unknown link');p.live=live;demo.save(s);return true}return rpc('wt_save_my_live',{p_token:token,p_live:live})},
   async dmSaveLive(pass,id,live){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);if(p){p.live=live;demo.save(s)}return true}return rpc('wt_dm_save_live',{p_pass:pass,p_id:id,p_live:live})},
+  async myMissions(token){if(!LIVE){const ms=lsGet('wt2.missions',[]);return ms.filter(m=>m.player===token&&m.sent).map(m=>({id:m.id,def:m.def,state:m.state||{}}))}return rpc('wt_my_missions',{p_token:token})},
+  async missionSave(token,id,state){if(!LIVE){const ms=lsGet('wt2.missions',[]);const m=ms.find(m=>m.id===id&&m.player===token&&m.sent);if(!m)throw new Error('Unknown mission');m.state=(m.state&&m.state.done)?{...m.state,used:!!state.used}:state;lsSet('wt2.missions',ms);return true}return rpc('wt_mission_save',{p_token:token,p_id:id,p_state:state})},
+  async dmMissions(pass){if(!LIVE)return lsGet('wt2.missions',[]).map(m=>({...m,state:m.state||{}}));return rpc('wt_dm_missions',{p_pass:pass})},
+  async dmMissionPut(pass,id,player,def){if(!LIVE){const ms=lsGet('wt2.missions',[]);let m=id&&ms.find(m=>m.id===id);if(m)m.def=def;else{m={id:'ms'+Math.random().toString(36).slice(2,10),player,def,state:{},sent:false};ms.push(m)}lsSet('wt2.missions',ms);return m.id}return rpc('wt_dm_mission_put',{p_pass:pass,p_id:id||null,p_player:player,p_def:def})},
+  async dmMissionSend(pass,id,sent){if(!LIVE){const ms=lsGet('wt2.missions',[]);const m=ms.find(m=>m.id===id);if(m)m.sent=sent;lsSet('wt2.missions',ms);return true}return rpc('wt_dm_mission_send',{p_pass:pass,p_id:id,p_sent:sent})},
+  async dmMissionState(pass,id,state){if(!LIVE){const ms=lsGet('wt2.missions',[]);const m=ms.find(m=>m.id===id);if(m)m.state=state;lsSet('wt2.missions',ms);return true}return rpc('wt_dm_mission_state',{p_pass:pass,p_id:id,p_state:state})},
+  async dmMissionDel(pass,id){if(!LIVE){lsSet('wt2.missions',lsGet('wt2.missions',[]).filter(m=>m.id!==id));return true}return rpc('wt_dm_mission_del',{p_pass:pass,p_id:id})},
   async dmSave(pass,id,data){if(!LIVE){const s=demo.load();const p=s.players.find(p=>p.token===id);p.data=data;demo.save(s);return true}
     return rpc('wt_dm_save_character',{p_pass:pass,p_id:id,p_data:data})}
 };
 
 /* ---------- state ---------- */
 const qs=new URLSearchParams(location.search);
-const S={cxSeen:new Set(),inbox:null,inboxSig:'',wseen:new Set(),party:[],partySig:'',liveEdit:{},art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',dtab:'players',pub:{},pubSig:'',seen:new Set(),dmt:{scene:{title:'',text:''},monsters:[],log:[]},
+const S={missions:null,msOpen:null,msOff:false,msEdit:0,dmMissions:[],msSig:'',dmMsSig:'',cxSeen:new Set(),inbox:null,inboxSig:'',wseen:new Set(),party:[],partySig:'',liveEdit:{},art:{},artIdx:{},artNew:new Set(),tableMode:qs.has('table'),ptab:'me',dtab:'players',pub:{},pubSig:'',seen:new Set(),dmt:{scene:{title:'',text:''},monsters:[],log:[]},
   token:qs.get('p')||lsGet('wt2.token',null),dmMode:qs.has('dm'),pass:lsGet('wt2.pass',null),
   me:null,players:[],tab:null,open:null,draft:null,step:0,swap:null,armed:null,err:null,loaded:false,editing:false};
 if(qs.get('p'))lsSet('wt2.token',qs.get('p'));
@@ -971,12 +989,79 @@ function viewPlayer(){
   if(S.me&&S.me.data&&!S.editing&&S.ptab==='table')return viewTable();
   if(S.me&&S.me.data&&!S.editing&&S.ptab==='codex')return viewCodex();
   if(S.me&&S.me.data&&!S.editing&&S.ptab==='story')return viewStory();
+  if(S.me&&S.me.data&&!S.editing&&S.ptab==='missions')return viewMissions();
   if(!S.token)return`<div class="empty"><h2>Members only</h2><p>The DM sends each player their own link. Open that one and your character is saved to it.</p></div>`;
   if(!S.loaded)return'<p class="banner">Loading your character…</p>';
   if(!S.me)return`<div class="empty"><h2>The doorman does not recognise you</h2><p>Ask the DM for a fresh link.</p></div>`;
-  if(S.me.data&&!S.editing)return`<div class="row" style="justify-content:space-between"><span class="eyebrow">Guild member: ${esc(S.me.label)}</span></div>`+(presetOf().note?`<div class="panel dmnote"><span class="eyebrow">A note from the DM</span><p style="margin:.3em 0 0">${esc(presetOf().note)}</p></div>`:'')+trackerHTML(S.me.data,S.me.live,S.me.id)+(S.art['pc-'+S.me.id]?`<div class="portrait ${S.artNew.has('pc-'+S.me.id)?'new':''}">${artImg('pc-'+S.me.id)}</div>`:'')+sheetHTML(S.me.data,{gifts:presetOf().items})+((S.inbox||[]).length?`<details class="panel"><summary style="cursor:pointer"><b>Whispers from the DM</b> <span class="sub">(${S.inbox.length})</span></summary><div class="wlist" style="margin-top:8px">${S.inbox.slice().reverse().map(w=>`<div><p style="margin:0">${esc(w.text)}</p>${w.reply?`<p class="sub" style="margin:2px 0 0">You said: ${esc(w.reply)}</p>`:''}</div>`).join('')}</div></details>`:'')+`<div class="panel" style="display:grid;gap:8px"><h3>Change my mind</h3><p class="muted" style="margin:0">Opens the character builder again with your current choices filled in, so you can swap a skill, a spell or your whole backstory. Nothing changes until you sign the ledger again at the end, and you can cancel at any step. Your hit points and conditions stay as they are.</p><div><button class="btn sm" data-act="edit">Rebuild my character</button></div></div>`;
+  if(S.me.data&&!S.editing)return`<div class="row" style="justify-content:space-between"><span class="eyebrow">Guild member: ${esc(S.me.label)}</span></div>`+(presetOf().note?`<div class="panel dmnote"><span class="eyebrow">A note from the DM</span><p style="margin:.3em 0 0">${esc(presetOf().note)}</p></div>`:'')+perksHTML()+trackerHTML(S.me.data,S.me.live,S.me.id)+(S.art['pc-'+S.me.id]?`<div class="portrait ${S.artNew.has('pc-'+S.me.id)?'new':''}">${artImg('pc-'+S.me.id)}</div>`:'')+sheetHTML(S.me.data,{gifts:presetOf().items})+((S.inbox||[]).length?`<details class="panel"><summary style="cursor:pointer"><b>Whispers from the DM</b> <span class="sub">(${S.inbox.length})</span></summary><div class="wlist" style="margin-top:8px">${S.inbox.slice().reverse().map(w=>`<div><p style="margin:0">${esc(w.text)}</p>${w.reply?`<p class="sub" style="margin:2px 0 0">You said: ${esc(w.reply)}</p>`:''}</div>`).join('')}</div></details>`:'')+`<div class="panel" style="display:grid;gap:8px"><h3>Change my mind</h3><p class="muted" style="margin:0">Opens the character builder again with your current choices filled in, so you can swap a skill, a spell or your whole backstory. Nothing changes until you sign the ledger again at the end, and you can cancel at any step. Your hit points and conditions stay as they are.</p><div><button class="btn sm" data-act="edit">Rebuild my character</button></div></div>`;
   return(S.editing?`<div class="panel row" style="justify-content:space-between"><span class="muted" style="flex:1;min-width:180px">You are editing ${esc(S.me.data.name||'your character')}. Nothing changes until you sign again.</span><button class="btn sm" data-act="canceledit">Cancel, keep it as it was</button></div>`:'')+(S.me.data||S.step>0?'':`<div class="panel"><span class="eyebrow">Welcome to the guild, ${esc(S.me.label)}</span><p style="margin:.3em 0 0">Eight short steps to build the adventurer nobody else would hire. Nothing is final until the first session, and the DM only sees it once you sign.</p>${presetOf().note?`<p style="margin:.6em 0 0"><span class="eyebrow">A note from the DM</span><br>${esc(presetOf().note)}</p>`:''}</div>`)+viewBuild();
 }
+
+/* ---------- missions: solo jobs played on the player's own link ---------- */
+const para=t=>String(t||'').split(/\n\s*\n/).filter(x=>x.trim()).map(x=>'<p>'+esc(x.trim())+'</p>').join('');
+const d20=()=>{try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%20+1}catch(e){return Math.floor(Math.random()*20)+1}};
+function msPerk(m){const d=(m.state||{}).done;return d==='perk'?(m.def.perk||null):d==='lesser'?(m.def.lesser||null):null}
+function msStatus(m){const st=m.state||{};if(st.done)return'done';return((st.log||[]).length||st.pending)?'going':'new'}
+function msAt(m){const sc=m.def.scenes||{};const k=(m.state||{}).at||m.def.start||Object.keys(sc)[0];return[k,sc[k]||{text:''}]}
+function msRollInfo(c,r){const x=derive(c);if(r.skill){const k=x.skills.find(z=>z.s===r.skill);if(k)return{label:r.skill,mod:k.v}}if(r.save&&x.saves[r.save])return{label:ABS[r.save]+' save',mod:x.saves[r.save].v};if(r.ab&&x.m[r.ab]!=null)return{label:ABS[r.ab]+' check',mod:x.m[r.ab]};return{label:r.label||'Luck',mod:0}}
+let msQ=Promise.resolve();
+function msSave(m){S.msEdit=Date.now();const v=clone(m.state);msQ=msQ.then(()=>API.missionSave(S.token,m.id,v)).then(()=>{S.msEdit=Date.now()}).catch(e=>toast('That did not save: '+esc(e.message)+'. Check your signal and tap again.'))}
+function msGo(m,to,entry){const st=m.state=Object.assign({log:[],score:0},m.state||{});if(entry){st.log=[...(st.log||[]),entry];st.score=(+st.score||0)+(+entry.pts||0)}delete st.pending;
+  const sc=m.def.scenes||{};let k=to,g=0;while(g++<20){const x=sc[k];if(!x){st.at=k;st.done='none';st.doneAt=new Date().toISOString();break}if(x.gate){k=(+st.score||0)>=(+x.gate.min||0)?x.gate.pass:x.gate.fail;continue}st.at=k;if(x.end){st.done=x.end;st.doneAt=new Date().toISOString()}break}
+  msSave(m)}
+function msDid(e){if(e.t==='roll'&&e.roll){const r=e.roll;return`<p class="ms-did">${esc(e.label||'')} · ${esc(r.label)}: rolled ${r.d}${r.d2!=null?' and '+r.d2:''} ${sg(r.mod)} = ${r.total} against ${r.dc}. ${r.ok?'It worked.':'It did not.'}</p>${para(e.after)}`}
+  if(e.t==='ask')return`<p class="ms-did">You: “${esc(e.text||'')}”</p>`;if(e.t==='wait')return'';return`<p class="ms-did">${esc(e.label||'')}</p>${para(e.after)}`}
+function perkCard(m,dm){const pk=msPerk(m);if(!pk)return'';const used=!!(m.state||{}).used;
+  return`<div class="panel perk ${used?'used':''}" style="display:grid;gap:6px"><div class="row" style="justify-content:space-between"><span class="eyebrow">Perk${m.def.title?' · '+esc(m.def.title):''}</span><span class="chip ${used?'':'on'}">${used?'Used':'Ready'}</span></div><h3>${esc(pk.name)}</h3><p style="margin:0">${esc(pk.text)}</p>${dm?'':used?'':`<div><button class="btn sm" data-act="msuse" data-id="${esc(m.id)}">${S.armed==='use'+m.id?'Tap again: it is gone once used':'Use it now'}</button></div>`}</div>`}
+function perksHTML(){const L=(S.missions||[]).filter(m=>msPerk(m));const open=(S.missions||[]).filter(m=>msStatus(m)!=='done');
+  return(open.length?`<div class="panel dmnote" style="display:grid;gap:6px"><span class="eyebrow">A job has come in for you</span>${open.map(m=>`<div class="row" style="justify-content:space-between"><span><b>${esc(m.def.title)}</b>${m.def.due?` <span class="sub">by ${esc(m.def.due)}</span>`:''}</span><button class="btn sm pri" data-act="msopen" data-id="${esc(m.id)}">${msStatus(m)==='new'?'Begin':'Carry on'}</button></div>`).join('')}</div>`:'')+L.map(m=>perkCard(m)).join('')}
+function msCard(m){const d=m.def,s=msStatus(m),pk=msPerk(m);
+  return`<div class="panel" style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><h3>${esc(d.title)}</h3><span class="chip ${s==='new'?'on':''}">${s==='new'?'New':s==='going'?'Under way':'Done'}</span></div>${d.blurb?`<p class="muted" style="margin:0">${esc(d.blurb)}</p>`:''}${d.due&&s!=='done'?`<p class="sub" style="margin:0">Finish by ${esc(d.due)}.</p>`:''}${pk?`<p style="margin:0">Earned: <b>${esc(pk.name)}</b>${(m.state||{}).used?' <span class="sub">(used)</span>':''}</p>`:''}<div><button class="btn ${s==='done'?'sm':'pri'}" data-act="msopen" data-id="${esc(m.id)}">${s==='new'?'Begin':s==='going'?'Carry on':'Read it again'}</button></div></div>`}
+function msView(m){const d=m.def,st=m.state||{},[at,sc]=msAt(m),all=d.scenes||{},c=S.me.data;
+  const past=(st.log||[]).map(e=>{const ps=all[e.s]||{};return`<div class="ms-past">${ps.title?`<span class="eyebrow">${esc(ps.title)}</span>`:''}${para(ps.text)}${msDid(e)}</div>`}).join('');
+  let now='';
+  if(st.pending){const ch=(sc.choices||[])[st.pending.c]||{},r=st.pending.roll;
+    now=`<div class="ms-now">${sc.title?`<span class="eyebrow">${esc(sc.title)}</span>`:''}${para(sc.text)}</div><div class="panel" style="display:grid;gap:8px;text-align:center" id="msnow"><span class="eyebrow">${esc(r.label)} · you need ${r.dc}</span><div class="ms-roll">${r.total} <small>(${r.d2!=null?'dice '+r.d+' and '+r.d2+', kept '+r.kept:'you rolled '+r.d} ${sg(r.mod)})</small></div><p style="margin:0"><b>${r.ok?(r.kept===20?'A natural twenty. It works.':'It works.'):(r.kept===1?'A natural one. It does not.':'It does not.')}</b></p><div style="text-align:left">${para(r.ok?ch.passText:ch.failText)}</div><div><button class="btn pri" data-act="mscont" data-id="${esc(m.id)}">Carry on</button></div></div>`}
+  else{now=`<div class="ms-now" id="msnow">${sc.title?`<span class="eyebrow">${esc(sc.title)}</span>`:''}${para(sc.text)}</div>`;
+    if(st.done){const pk=msPerk(m);now+=(pk?perkCard(m):'<p class="banner" style="margin:0">No perk this time. The guild thanks you for trying.</p>')+`<p class="sub" style="margin:0">The DM can see how it went. ${pk?'The perk is on your character page.':''}</p>`}
+    else if(sc.wait)now+=`<p class="banner" style="margin:0">The DM has your move and will carry the story on. Come back later; it appears here.</p>`;
+    else if(sc.ask)now+=`<label class="f">${esc(sc.ask)} <span class="h">Only the DM sees it.</span><textarea id="msask" rows="3" maxlength="600"></textarea></label><div><button class="btn pri" data-act="msask" data-id="${esc(m.id)}">${esc(sc.askBtn||'That is my answer')}</button></div>`;
+    else now+=`<div class="ms-choices">${(sc.choices||[]).map((ch,i)=>{let tag='';if(ch.roll){const ri=msRollInfo(c,ch.roll);tag=` <span class="chip">Roll ${esc(ri.label)} ${sg(ri.mod)} · need ${+ch.roll.dc||10}${ch.roll.adv?' · two dice, keep the best':ch.roll.dis?' · two dice, keep the worst':''}</span>`}return`<button class="btn" data-act="mschoice" data-id="${esc(m.id)}" data-i="${i}"><span>${esc(ch.label)}</span>${tag}</button>`}).join('')}</div>`}
+  return`<div class="row" style="justify-content:space-between"><button class="btn sm" data-act="msback">All missions</button>${d.due&&!st.done?`<span class="sub">Finish by ${esc(d.due)}</span>`:''}</div><h2 style="font-size:1.7rem">${esc(d.title)}</h2>${past}${now}`}
+function viewMissions(){const L=S.missions||[];const m=S.msOpen&&L.find(x=>x.id===S.msOpen);if(m)return msView(m);
+  if(!L.length)return`<div class="empty"><h2>No jobs on the board</h2><p>When the DM sends you a private job, it turns up here.</p></div>`;
+  return`<div class="panel"><span class="eyebrow">Private jobs</span><p style="margin:.3em 0 0">Jobs the guild has for you alone. Play them here, in your own time, with the dice on this page. Nobody else sees your choices except the DM. There is no going back on a roll.</p></div>`+L.map(msCard).join('')}
+async function pollMissions(force){if(S.dmMode||S.tableMode||!S.token||!S.me||!S.me.data||S.msOff)return;if(!force&&(document.hidden||Date.now()-S.msEdit<9000))return;
+  try{const got=await API.myMissions(S.token)||[];if(Date.now()-S.msEdit<9000&&!force)return;const sig=JSON.stringify(got);if(sig===S.msSig)return;const first=S.missions==null;S.msSig=sig;S.missions=got;if(first||!busy())render()}catch(e){if(S.missions==null){S.missions=[];if(e.status===404||/wt_my_missions|schema cache|function/i.test(e.message))S.msOff=true}}}
+setInterval(pollMissions,10000);
+
+/* DM side of missions */
+function dmMsStatus(m){const st=m.state||{};if(!m.sent)return['Draft, not sent',''];if(st.done){const pk=msPerk(m);return[(pk?'Done · earned '+pk.name:'Done · no perk')+(st.used?' (used)':''),'on']}const sc=(m.def.scenes||{})[st.at]||null;if(sc&&sc.wait)return['Waiting for you','bad'];if((st.log||[]).length||st.pending)return['Under way · '+((sc&&sc.title)||st.at||''),''];return['Sent, not opened yet','']}
+function dmMsLog(m){const all=m.def.scenes||{},st=m.state||{};const L=(st.log||[]).map(e=>{const ps=all[e.s]||{};let w='';if(e.t==='roll'&&e.roll){const r=e.roll;w=`${esc(e.label||'')} · ${esc(r.label)} ${r.d}${r.d2!=null?'/'+r.d2:''} ${sg(r.mod)} = ${r.total} against ${r.dc}: <b>${r.ok?'passed':'failed'}</b>`}else if(e.t==='ask')w=`Answered: <b style="color:var(--accent)">“${esc(e.text||'')}”</b>`;else if(e.t==='wait')w='Waited for you';else w='Chose: '+esc(e.label||'');return`<div><span class="sub">${esc(ps.title||e.s)}</span><br>${w}</div>`}).join('');return L?`<div class="ms-log">${L}</div>`:''}
+function dmMsRow(m){const p=(S.players||[]).find(x=>x.id===m.player),who=p?(p.data&&p.data.name?p.data.name+' ('+p.label+')':p.label):'Unknown player',[txt,cl]=dmMsStatus(m),st=m.state||{},id=esc(m.id),sc=(m.def.scenes||{})[st.at]||null,pk=msPerk(m);
+  const waiting=m.sent&&!st.done&&sc&&sc.wait;
+  return`<div class="panel msrow" style="display:grid;gap:8px"><div class="row" style="justify-content:space-between"><div><h3>${esc(m.def.title)}</h3><div class="sub">${esc(who)}${m.def.due?' · by '+esc(m.def.due):''}</div></div><span class="chip ${cl}">${esc(txt)}</span></div>
+   ${pk?`<p style="margin:0"><b>${esc(pk.name)}:</b> ${esc(pk.text)}</p>`:`<p class="sub" style="margin:0">Perk on offer: ${esc((m.def.perk||{}).name||'none')}${m.def.lesser?' (or '+esc(m.def.lesser.name)+')':''}</p>`}
+   ${(st.log||[]).length?`<details><summary class="sub" style="cursor:pointer">How it went (${st.log.length} step${st.log.length>1?'s':''})</summary><div style="margin-top:8px">${dmMsLog(m)}</div></details>`:''}
+   ${waiting?`<div style="display:grid;gap:6px"><label class="f">Carry the story on <span class="h">They read this next.</span><textarea id="mc-${id}" rows="3" placeholder="The door opens. It is not who you expected."></textarea></label><div class="row"><select id="mn-${id}" aria-label="Then"><option value="__perk">Then end: they earn the perk</option>${m.def.lesser?'<option value="__lesser">Then end: the lesser perk</option>':''}<option value="__none">Then end: no perk</option><option value="__wait">Then wait for me again</option>${Object.entries(m.def.scenes||{}).filter(([k,x])=>!x.gate&&k!==st.at).map(([k,x])=>`<option value="${esc(k)}">Then go to: ${esc(x.title||k)}</option>`).join('')}</select><button class="btn sm pri" data-act="mscontinue" data-id="${id}">Send</button></div></div>`:''}
+   <div class="row" style="justify-content:flex-end">${pk?`<button class="btn sm" data-act="msusedm" data-id="${id}">${st.used?'Mark perk unused':'Mark perk used'}</button>`:''}<button class="btn sm ${m.sent?'':'pri'}" data-act="mssend" data-id="${id}">${m.sent?'Take it back':'Send to '+esc(p?p.label:'player')}</button>${(st.log||[]).length||st.done||st.pending?`<button class="btn sm" data-act="msreset" data-id="${id}">${S.armed==='msreset'+m.id?'Tap again: wipes their progress':'Reset'}</button>`:''}<button class="btn sm warn" data-act="msdel" data-id="${id}">${S.armed==='msdel'+m.id?'Tap again':'Remove'}</button></div></div>`}
+function viewDMMissions(){
+  if(S.msOff)return`<div class="empty"><h2>Missions are not switched on yet</h2><p>The database needs one update first. Run <b>update4.sql</b> in the Supabase SQL editor, then tap Refresh on the Players tab.</p></div>`;
+  const L=S.dmMissions||[],drafts=L.filter(m=>!m.sent).length;
+  return`<div class="row" style="justify-content:space-between"><h2 style="font-size:1.6rem">Missions</h2><span class="row" style="gap:6px">${drafts?`<button class="btn sm pri" data-act="mssendall">${S.armed==='mssendall'?'Tap again':'Send all '+drafts+' drafts'}</button>`:''}<span class="chip">${L.filter(m=>(m.state||{}).done).length} of ${L.length} done</span></span></div>
+   <p class="sub" style="margin:0">A mission is a short solo story for one player: they read, choose and roll on their own link, in their own time, and earn a perk for the next session. You see every choice, roll and answer here.</p>
+   <div id="dmmissions" style="display:grid;gap:8px">${L.length?L.map(dmMsRow).join(''):'<div class="empty"><p style="margin:0">No missions yet. Load a missions file below.</p></div>'}</div>
+   <div class="panel" style="display:grid;gap:8px"><span class="eyebrow">Load missions</span><p class="sub" style="margin:0">Paste a missions file from Claude, or choose the file. Each mission lands as a draft for the player it names; nothing reaches them until you send it. Loading a mission with the same title again updates its text and keeps their progress.</p><textarea id="msimport" rows="3" placeholder='{"missions":[…]}'></textarea><div class="row"><button class="btn sm pri" data-act="msimport">Load</button><label class="btn sm">Choose file<input type="file" accept=".json,application/json" data-msfile="1" hidden></label><button class="btn sm" data-act="msrefresh">Refresh</button></div></div>`}
+async function dmMsLoad(){try{S.dmMissions=await API.dmMissions(S.pass)||[];S.dmMsSig=JSON.stringify(S.dmMissions);S.msOff=false}catch(e){S.dmMissions=[];if(e.status===404||/wt_dm_missions|schema cache|function/i.test(e.message))S.msOff=true}}
+async function importMissions(txt){let j;try{j=JSON.parse(txt)}catch(e){toast('That is not a missions file I can read.');return}
+  const arr=Array.isArray(j)?j:Array.isArray(j&&j.missions)?j.missions:(j&&j.scenes?[j]:[]);if(!arr.length){toast('That file has no missions in it.');return}
+  let n=0;const miss=[];for(const d of arr){if(!d||!d.title||!d.scenes||typeof d.scenes!=='object')continue;const pl=findPlayer(d.for);if(!pl){miss.push(d.for||'nobody');continue}
+    const ex=(S.dmMissions||[]).find(m=>m.player===pl.id&&m.def&&m.def.title===d.title);try{await API.dmMissionPut(S.pass,ex?ex.id:null,pl.id,d);n++}catch(e){toast('Could not load “'+esc(d.title)+'”: '+esc(e.message));return}}
+  await dmMsLoad();render();toast(n+' mission'+(n===1?'':'s')+' loaded as drafts.'+(miss.length?' No player called '+esc(miss.join(', '))+'.':''),6000)}
+async function pollDMMissions(){if(document.hidden||!S.dmMode||!S.pass||S.err==='auth'||S.dtab!=='missions'||S.msOff||busy())return;
+  try{const got=await API.dmMissions(S.pass)||[];const sig=JSON.stringify(got);if(sig===S.dmMsSig)return;const was=S.dmMissions.filter(m=>(m.state||{}).done).length;S.dmMissions=got;S.dmMsSig=sig;if(got.filter(m=>(m.state||{}).done).length>was)toast('A player has finished a mission.');if(!busy())render()}catch(e){}}
+setInterval(pollDMMissions,8000);
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.msfile&&t.files&&t.files[0]){const r=new FileReader();r.onload=()=>importMissions(String(r.result));r.readAsText(t.files[0])}});
 
 /* ---------- DM views ---------- */
 function dealHTML(p){const P=p.preset||{};const id=esc(p.id);const sel=(f,obj)=>`<select id="pr-${f}-${id}" aria-label="${f}"><option value="">Player chooses</option>${Object.entries(obj).map(([k,o])=>`<option value="${k}" ${P[f]===k?'selected':''}>${esc(o.name)}</option>`).join('')}</select>`;
@@ -1004,7 +1089,7 @@ function viewDM(){
    <div class="panel" style="display:grid;gap:8px"><h3>For the story</h3>${notes||'<p class="muted" style="margin:0">What players want, how they know each other, what they enjoy and their secrets appear here as characters come in.</p>'}</div>
    <div class="row"><button class="btn sm" data-act="refresh">Refresh</button><button class="btn sm" data-act="dmlogout">Sign out</button></div>`;
 }
-async function dmLoad(){try{S.players=await API.dmList(S.pass)||[];S.err=null;try{const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);await syncArt(all.map(a=>a.id),true)}catch(e){}const tb=await API.dmTableGet(S.pass);if(tb&&tb.dm&&tb.dm.scene)S.dmt=tb.dm;try{S.party=await API.partyGet()||[];S.partySig=JSON.stringify(S.party)}catch(e){}}catch(e){if(e.status===401||/passphrase|auth/i.test(e.message)){S.err='auth'}else toast('Could not reach the table: '+esc(e.message))}render()}
+async function dmLoad(){try{S.players=await API.dmList(S.pass)||[];S.err=null;try{const all=await API.dmArtList(S.pass);S.artIdx={};all.forEach(a=>S.artIdx[a.id]=a);await syncArt(all.map(a=>a.id),true)}catch(e){}const tb=await API.dmTableGet(S.pass);if(tb&&tb.dm&&tb.dm.scene)S.dmt=tb.dm;try{S.party=await API.partyGet()||[];S.partySig=JSON.stringify(S.party)}catch(e){}await dmMsLoad()}catch(e){if(e.status===401||/passphrase|auth/i.test(e.message)){S.err='auth'}else toast('Could not reach the table: '+esc(e.message))}render()}
 function pendingWhisper(){if(S.dmMode||S.tableMode||!S.inbox)return null;return S.inbox.find(w=>w.rat==null&&!S.wseen.has(w.id))||null}
 function whisperModal(w){return`<div class="ov"><div class="card whisper" role="dialog" aria-label="A whisper from the DM"><span class="eyebrow">A whisper from the DM · for your eyes only</span><p class="wtext">${esc(w.text)}</p>
   <label class="f">Your answer <span class="h">Only the DM sees it. Keep a straight face.</span><textarea id="wreply" rows="3"></textarea></label>
@@ -1017,14 +1102,14 @@ function render(){
   $('#brand').firstChild.nodeValue=CFG.name||'The Guild of Second Chances';
   $('#role').innerHTML=LIVE?'':`<span class="sub">Demo:</span>${[['player','Player'],['dm','DM'],['table','Table screen']].map(([k,l])=>`<button class="chip ${(k==='dm'&&S.dmMode)||(k==='table'&&S.tableMode)||(k==='player'&&!S.dmMode&&!S.tableMode)?'on':''}" data-act="demo" data-v="${k}">${l}</button>`).join('')}`;
   let tabs=[];
-  if(S.dmMode&&S.pass&&S.err!=='auth')tabs=[['players','Players'],['run','Run the table'],['codex','Codex'],['guide','Guide']];
-  else if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data&&!S.editing)tabs=[['me','My character'],['table','The table'],['story','The story'],['codex','The Guide']];
+  if(S.dmMode&&S.pass&&S.err!=='auth')tabs=[['players','Players'],['run','Run the table'],['codex','Codex'],['guide','Guide'],['missions','Missions']];
+  else if(!S.dmMode&&!S.tableMode&&S.me&&S.me.data&&!S.editing){tabs=[['me','My character'],['table','The table'],['story','The story'],['codex','The Guide']];if((S.missions||[]).length){const n=S.missions.filter(m=>msStatus(m)!=='done').length;tabs.splice(1,0,['missions','Missions'+(n?' ('+n+')':'')])}else if(S.ptab==='missions')S.ptab='me'}
   const cur=S.dmMode?S.dtab:S.ptab;
   $('#tabs').innerHTML=tabs.map(([k,l])=>`<button data-act="tab" data-t="${k}" aria-current="${cur===k}">${l}</button>`).join('');
   document.body.classList.toggle('tv',S.tableMode);
   const showMood=S.tableMode||(!S.dmMode&&S.me&&S.me.data&&!S.editing);
   setMood(showMood&&S.pub&&S.pub.scene?S.pub.scene.mood||'':'');
-  const dmIn=S.pass&&S.err!=='auth';const body=S.tableMode?viewTable():S.dmMode?(dmIn&&S.dtab==='run'?viewRun():dmIn&&S.dtab==='codex'?viewDMCodex():dmIn&&S.dtab==='guide'?viewGuide():viewDM()):viewPlayer();
+  const dmIn=S.pass&&S.err!=='auth';const body=S.tableMode?viewTable():S.dmMode?(dmIn&&S.dtab==='run'?viewRun():dmIn&&S.dtab==='codex'?viewDMCodex():dmIn&&S.dtab==='guide'?viewGuide():dmIn&&S.dtab==='missions'?viewDMMissions():viewDM()):viewPlayer();
   $('#main').innerHTML='<section class="view">'+body+'</section>';
   renderOverlay();
 }
@@ -1104,12 +1189,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='dmpas
 function hist(m,st){try{history[m==='push'?'pushState':'replaceState'](st,'')}catch(e){}}
 try{if(!history.state)history.replaceState({ptab:S.ptab||'me'},'')}catch(e){}
 addEventListener('popstate',e=>{const st=e.state||{};if(S.dmMode)return;const tab=st.ptab||'me';const cx=st.cx||null;
-  if(cx!==S.cxOpen){S.cxOpen=cx;renderOverlay()}if(tab!==S.ptab){S.ptab=tab;if(tab==='table')pollTable(true);window.scrollTo(0,0);render()}});
+  if(cx!==S.cxOpen){S.cxOpen=cx;renderOverlay()}if(tab!==S.ptab){S.ptab=tab;S.msOpen=null;if(tab==='table')pollTable(true);window.scrollTo(0,0);render()}});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.cx.tap')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&S.cxOpen){if(history.state&&history.state.cx)history.back();else{S.cxOpen=null;renderOverlay()}}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
   if(a==='closebg'&&e.target!==b)return;
-  if(!['remove','restart','lrest','lrestall','cxrm','gclear','lvlall'].includes(a))S.armed=null;
+  if(!['remove','restart','lrest','lrestall','cxrm','gclear','lvlall','msuse','msreset','msdel','mssendall'].includes(a))S.armed=null;
   const rr=()=>render();
   switch(a){
   case'pick':{const f=b.dataset.f,v=b.dataset.v;if(!S.dmMode&&presetOf()[f]&&presetOf()[f]!==v)break;S.draft[f]=v;if(f==='cls'){S.draft.base={...CLS[v].arr};S.draft.skills=[];S.draft.cantrips=[];S.draft.spells=[]}if(f==='background'||f==='ancestry'){const fx=new Set([...((BG[S.draft.background]||{}).skills||[]),...((ANC[S.draft.ancestry]||{}).skills||[])]);S.draft.skills=S.draft.skills.filter(s=>!fx.has(s))}saveDraft();rr();break}
@@ -1177,7 +1262,7 @@ document.addEventListener('click',async e=>{
   case'demo':{const v=b.dataset.v;S.dmMode=v==='dm';S.tableMode=v==='table';S.open=null;
     if(v==='player'){const s=demo.load();if(!S.token||!s.players.find(p=>p.token===S.token)){if(!s.players.length){s.players.push({token:'demo'+Math.random().toString(36).slice(2,8),label:'Demo player'});demo.save(s)}S.token=s.players[0].token;lsSet('wt2.token',S.token)}S.me=await API.me(S.token);S.loaded=true;S.draft=lsGet(draftKey(),null)||blankDraft();S.step=0}
     if(v==='dm'&&S.pass)await dmLoad();if(v==='table')await pollTable(true);window.scrollTo(0,0);rr();break}
-  case'tab':if(S.dmMode){S.dtab=b.dataset.t;if(S.dtab==='run'||S.dtab==='guide')setTimeout(pollParty,50)}else{if(S.ptab!==b.dataset.t)hist('push',{ptab:b.dataset.t});S.ptab=b.dataset.t;if(S.ptab==='table')pollTable(true);setTimeout(pollParty,50)}window.scrollTo(0,0);rr();break;
+  case'tab':if(S.dmMode){S.dtab=b.dataset.t;if(S.dtab==='missions')dmMsLoad().then(render);if(S.dtab==='run'||S.dtab==='guide')setTimeout(pollParty,50)}else{if(S.ptab!==b.dataset.t)hist('push',{ptab:b.dataset.t});S.ptab=b.dataset.t;if(S.ptab==='missions')S.msOpen=null;if(S.ptab==='table')pollTable(true);setTimeout(pollParty,50)}window.scrollTo(0,0);rr();break;
   case'sceneset':S.dmt.scene={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};S.moodPick=null;saveDmt('The table can see the scene.');break;
   case'moodpick':{S.dmt.scene.title=$('#stitle').value;S.dmt.scene.text=$('#stext').value;S.moodPick=b.dataset.v;rr();break}
   case'scenesave':{const s={title:$('#stitle').value.trim(),text:$('#stext').value.trim(),mood:S.moodPick??(S.dmt.scene.mood||'')};if(!s.title)break;const L=S.dmt.presets||clone(STARTER_SCENES);S.dmt.presets=[s,...L.filter(x=>x.title!==s.title)].slice(0,30);saveDmt('Saved as a preset.');break}
@@ -1195,6 +1280,28 @@ document.addEventListener('click',async e=>{
   case'reveal':{const id=b.dataset.id;const sh=!(S.artIdx[id]||{}).shown;try{await API.dmArtShow(S.pass,id,sh);S.artIdx[id]={...(S.artIdx[id]||{id}),shown:sh};toast(sh?'Revealed. It flips onto their phone within a few seconds.':'Hidden again.');rr()}catch(err){toast('Could not change that: '+esc(err.message))}break}
   case'prompt':{let txt='';if(b.dataset.mk){const m=S.dmt.monsters.find(x=>x.k===b.dataset.mk);if(m)txt=monPrompt(m)}else{const p=S.players.find(x=>String(x.id)===b.dataset.pid);if(p&&p.data)txt=pcPrompt(p.data)}if(!txt)break;
     try{await navigator.clipboard.writeText(txt);toast('Prompt copied. Paste it into your image generator'+(b.dataset.pid?' and fill in the likeness part.':'.'))}catch(err){toast(esc(txt),15000)}break}
+  case'msopen':{S.msOpen=b.dataset.id;if(S.ptab!=='missions'){hist('push',{ptab:'missions'});S.ptab='missions'}rr();const el=document.getElementById('msnow');if(el&&(((S.missions||[]).find(x=>x.id===S.msOpen)||{}).state||{}).log)el.scrollIntoView({block:'start'});else window.scrollTo(0,0);break}
+  case'msback':S.msOpen=null;window.scrollTo(0,0);rr();break;
+  case'mschoice':{const m=(S.missions||[]).find(x=>x.id===b.dataset.id);if(!m||(m.state||{}).done||(m.state||{}).pending)break;const[at,sc]=msAt(m),i=+b.dataset.i,ch=(sc.choices||[])[i];if(!ch)break;
+    if(ch.roll){const ri=msRollInfo(S.me.data,ch.roll),d=d20(),two=ch.roll.adv||ch.roll.dis,d2=two?d20():null,kept=two?(ch.roll.adv?Math.max(d,d2):Math.min(d,d2)):d,dc=+ch.roll.dc||10,total=kept+ri.mod;
+      m.state=Object.assign({log:[],score:0},m.state||{},{at,pending:{c:i,roll:{label:ri.label,mod:ri.mod,d,d2,kept,total,dc,ok:total>=dc}}});msSave(m);rr();const el=document.getElementById('msnow');if(el)el.scrollIntoView({block:'center'});if(navigator.vibrate)try{navigator.vibrate(60)}catch(e){}}
+    else{msGo(m,ch.to,{s:at,t:'choice',label:ch.label,pts:+ch.pts||0,after:ch.after||''});rr();const el=document.getElementById('msnow');if(el)el.scrollIntoView({block:'start'})}break}
+  case'mscont':{const m=(S.missions||[]).find(x=>x.id===b.dataset.id);if(!m||!(m.state||{}).pending)break;const[at,sc]=msAt(m),pd=m.state.pending,ch=(sc.choices||[])[pd.c]||{},ok=pd.roll.ok;
+    msGo(m,ok?ch.pass:ch.fail,{s:at,t:'roll',label:ch.label,roll:pd.roll,pts:ok?(+ch.pts||0):(+ch.failPts||0),after:(ok?ch.passText:ch.failText)||''});rr();const el=document.getElementById('msnow');if(el)el.scrollIntoView({block:'start'});break}
+  case'msask':{const m=(S.missions||[]).find(x=>x.id===b.dataset.id);if(!m||(m.state||{}).done)break;const[at,sc]=msAt(m),t=(($('#msask')||{}).value||'').trim();if(!t){$('#msask')&&$('#msask').focus();break}
+    msGo(m,sc.to,{s:at,t:'ask',text:t.slice(0,600)});rr();const el=document.getElementById('msnow');if(el)el.scrollIntoView({block:'start'});break}
+  case'msuse':{const m=(S.missions||[]).find(x=>x.id===b.dataset.id);if(!m||!msPerk(m))break;if(S.armed!=='use'+m.id){S.armed='use'+m.id;rr();break}S.armed=null;m.state={...m.state,used:true};msSave(m);toast('Used: '+esc(msPerk(m).name)+'. Tell the DM.');rr();break}
+  case'msimport':await importMissions(($('#msimport')||{}).value||'');break;
+  case'msrefresh':await dmMsLoad();rr();toast('Up to date.');break;
+  case'mssend':{const m=(S.dmMissions||[]).find(x=>x.id===b.dataset.id);if(!m)break;const to=!m.sent;try{await API.dmMissionSend(S.pass,m.id,to);if(to&&msStatus(m)==='new')await sendWhisper(m.player,m.def.whisper||('A private job has come in for you: “'+m.def.title+'”. Open the Missions tab on your page.'+(m.def.due?' You have until '+m.def.due+'.':'')));await dmMsLoad();rr();if(!to)toast('Taken back. They can no longer see it.')}catch(err){toast('Could not do that: '+esc(err.message))}break}
+  case'mssendall':{if(S.armed!=='mssendall'){S.armed='mssendall';rr();break}S.armed=null;try{for(const m of (S.dmMissions||[]).filter(x=>!x.sent)){await API.dmMissionSend(S.pass,m.id,true);try{await API.dmWhisper(S.pass,m.player,m.def.whisper||('A private job has come in for you: “'+m.def.title+'”. Open the Missions tab on your page.'+(m.def.due?' You have until '+m.def.due+'.':'')))}catch(e){}}await dmMsLoad();rr();toast('Sent. Each player gets a whisper pointing them to it.')}catch(err){toast('Could not send: '+esc(err.message))}break}
+  case'msreset':case'msdel':{const id=b.dataset.id;if(S.armed!==a+id){S.armed=a+id;rr();break}S.armed=null;try{if(a==='msreset')await API.dmMissionState(S.pass,id,{});else await API.dmMissionDel(S.pass,id);await dmMsLoad();rr()}catch(err){toast('Could not do that: '+esc(err.message))}break}
+  case'msusedm':{const m=(S.dmMissions||[]).find(x=>x.id===b.dataset.id);if(!m)break;try{await API.dmMissionState(S.pass,m.id,{...m.state,used:!m.state.used});await dmMsLoad();rr()}catch(err){toast('Could not do that: '+esc(err.message))}break}
+  case'mscontinue':{const m=(S.dmMissions||[]).find(x=>x.id===b.dataset.id);if(!m)break;const id=m.id,t=((document.getElementById('mc-'+id)||{}).value||'').trim(),to=(document.getElementById('mn-'+id)||{}).value;if(!t){const el=document.getElementById('mc-'+id);el&&el.focus();break}
+    const def=clone(m.def),st=clone(m.state),k='dm'+Date.now().toString(36);const end=to==='__perk'?'perk':to==='__lesser'?'lesser':to==='__none'?'none':null;
+    def.scenes[k]=end?{title:'From the DM',text:t,end}:to==='__wait'?{title:'From the DM',text:t,ask:'What do you do?',to:k+'w'}:{title:'From the DM',text:t,choices:[{label:'Carry on',to}]};if(to==='__wait')def.scenes[k+'w']={title:'Waiting for the DM',text:'',wait:true};
+    st.log=[...(st.log||[]),{s:st.at,t:'wait'}];st.at=k;if(end){st.done=end;st.doneAt=new Date().toISOString()}
+    try{await API.dmMissionPut(S.pass,id,m.player,def);await API.dmMissionState(S.pass,id,st);await dmMsLoad();rr();toast('Sent. It appears on their page.')}catch(err){toast('Could not send: '+esc(err.message))}break}
   case'mrm':S.dmt.monsters=S.dmt.monsters.filter(x=>x.k!==b.dataset.k);saveDmt();break;
   case'mrevealall':S.dmt.monsters.forEach(m=>m.shown=true);saveDmt('Everything is on the table.');break;
   case'mcleardown':S.dmt.monsters=S.dmt.monsters.filter(m=>m.hp>0);saveDmt();break;
@@ -1208,7 +1315,7 @@ document.addEventListener('click',async e=>{
   if(S.dmMode){if(S.pass)await dmLoad();return}
   if(!S.token){S.loaded=true;render();return}
   try{S.me=await API.me(S.token);if(S.me&&S.me.data&&!lsGet(draftKey(),null))S.draft=charToDraft(S.me.data,'')}catch(e){toast('Could not reach the table: '+esc(e.message))}
-  S.loaded=true;render();
+  S.loaded=true;render();pollMissions(true);
 })();
 })();
 </script>
